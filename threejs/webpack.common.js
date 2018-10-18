@@ -22,7 +22,7 @@ let htmlOutputs=(()=>{
 	});
 	return result;
 })();
-console.log('test');
+console.log('yes');
 let entrys=(()=>{
 	let result={};
 	let pathArr=['./01/**/*.js'];
