@@ -37,6 +37,8 @@ let entrys=(()=>{
 	});
 	return result;
 })();
+console.log(entrys);
+//return;
 module.exports={
 	entry:entrys,
 	output:{
@@ -54,6 +56,11 @@ module.exports={
 				test:/\.(png|jpg)$/,
 				use:['url-loader?limit=2048']
 			},
+			{
+				test:/\.js$/,
+				exclude:/(node_modules)/,
+				use:{loader:'babel-loader'}
+			}
 		]
 	},
 	plugins:[

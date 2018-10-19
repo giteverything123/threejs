@@ -141,4 +141,4 @@ var Stats = function () {
 	}
 
 };
-module.exports=Stats;
+export default Stats;
