@@ -4,7 +4,7 @@ const htmlwebpackplugin=require('html-webpack-plugin');
 const cleanwebpackplugin=require('clean-webpack-plugin');
 let htmlOutputs=(()=>{
 	let result=[];
-	let pathArr=['./01/**/*.html'];
+	let pathArr=['./02/**/*.html'];
 	let pathReg=/^\.\/\d{2}\/\d{2}-\d{2}\/index\.html$/;
 	pathArr.forEach((pathItem)=>{
 		glob.sync(pathItem).forEach((entry)=>{
@@ -24,7 +24,7 @@ let htmlOutputs=(()=>{
 })();
 let entrys=(()=>{
 	let result={};
-	let pathArr=['./01/**/*.js'];
+	let pathArr=['./02/**/*.js'];
 	let pathReg=/^\.\/\d{2}\/\d{2}-\d{2}\/\d{2}-\d{2}\.js$/;
 	pathArr.forEach((pathItem)=>{
 		glob.sync(pathItem).forEach((entry)=>{
@@ -37,8 +37,7 @@ let entrys=(()=>{
 	});
 	return result;
 })();
-console.log(entrys);
-//return;
+entrys['three']='./js/three';
 module.exports={
 	entry:entrys,
 	output:{
