@@ -26,12 +26,9 @@ let htmlOutputs=(()=>{
 	pathArr.forEach((pathItem)=>{
 		glob.sync(pathItem).forEach((entry)=>{
 			if(entry.match(pathReg)){
-				console.log(entry);
 				var filenameReg=/\d{2}-\d{2}(?=\/index\.html)/;
 				var filename=entry.match(filenameReg)[0]+'.html';
 				var chunkname=entry.match(filenameReg)[0];
-				console.log(chunkname);
-				// console.log(JSON.stringify([jsfile]));
 				result.push(new htmlwebpackplugin({
 					template:entry,
 					filename:filename,
