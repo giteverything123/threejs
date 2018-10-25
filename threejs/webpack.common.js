@@ -57,7 +57,7 @@ module.exports={
 			},
 			{
 				test:/\.(png|jpg)$/,
-				use:['url-loader?limit=2048']
+				use:['url-loader']
 			},
 			{
 				test:/\.js$/,

@@ -11,8 +11,7 @@ $(function(){
 	var renderer=new THREE.WebGLRenderer();
 	renderer.setClearColor(new THREE.Color(0xEEEEEE,1.0));
 	renderer.setSize(window.innerWidth,window.innerHeight);
-	// renderer.shadowMapEnabled=true;
-	renderer.shadowMapType=THREE.PCFShadowMap;
+	renderer.shadowMapEnabled=true;
 	var axes = new THREE.AxisHelper(20);
     scene.add(axes);
 
@@ -23,13 +22,13 @@ $(function(){
     var plane=new THREE.Mesh(planeGeometry,planeMaterial);
 	plane.rotation.x=-0.5*Math.PI;
 	plane.position.x=15;
-	plane.position.y=0;
+	plane.position.y=-5;
 	plane.position.z=0;
 	plane.receiveShadow=true;
 	scene.add(plane);
 
 	var cubeGeometry=new THREE.BoxGeometry(4,4,4);
-	var cubeMaterial=new THREE.MeshLambertMaterial({color:0xff7777});
+	var cubeMaterial=new THREE.MeshLambertMaterial({color:0xff3333});
 	var cube=new THREE.Mesh(cubeGeometry,cubeMaterial);
 	cube.castShadow=true;//使产生投影
 	cube.position.x=-4;
@@ -60,19 +59,23 @@ $(function(){
 	spotLight0.lookAt(plane);
 	scene.add(spotLight0);
 
-	var target=new THREE.Object3D();
-	target.position=new THREE.Vector3(3,5,0);
-	var pointColor='#ffffff';
-	var spotLight=new THREE.SpotLight(pointColor);
-	spotLight.position.set(-40,60,-10);
-	spotLight.castShadow=true;
-	spotLight.shadowCameraNear=2;
-	spotLight.shadowCameraFar=200;
-	spotLight.shadowCameraFov=30;
-	spotLight.target=plane;
-	spotLight.distance=0;
-	spotLight.angle=0.4;
-	scene.add(spotLight);
+	// var target=new THREE.Object3D();
+	// target.position=new THREE.Vector3(3,5,0);
+	var pointColor='#ff5808';
+	var directionalLight=new THREE.DirectionalLight(pointColor);
+	directionalLight.position.set(-40,60,-10);
+	directionalLight.castShadow=true;
+	directionalLight.shadowCameraNear=2;
+	directionalLight.shadowCameraFar=200;
+	directionalLight.shadowCameraLeft=-50;
+	directionalLight.shadowCameraRight=50;
+	directionalLight.shadowCameraTop=50;
+	directionalLight.shadowCameraBottom=-50;
+	directionalLight.distance=0;
+	directionalLight.intensity=0.5;
+	directionalLight.shadowMapHeight=2048;
+	directionalLight.shadowMapWidth=2048;
+	scene.add(directionalLight);
 
 	var sphereLight=new THREE.SphereGeometry(0.2);
  	var sphereLightMaterial=new THREE.MeshBasicMaterial({color:0xac6c25});//注意这里是BasicMaterial
@@ -92,9 +95,8 @@ $(function(){
 		this.boundingSpeed=0.03;
 		this.ambientColor=ambiColor;
 		this.pointColor=pointColor;
-		this.intensity=1;
+		this.intensity=0.5;
 		this.distance=0;
-		this.exponent=30;
 		this.angle=0.1;
 		this.debug=false;
 		this.castShadow=true;
@@ -107,44 +109,35 @@ $(function(){
 		ambientLight.color=new THREE.Color(e);
 	});
 	gui.addColor(controls,'pointColor').onChange(function(e){
-		spotLight.color=new THREE.Color(e);
-	});
-	gui.add(controls,'angle',0,Math.PI*2).onChange(function(e){
-		spotLight.angle=e;
+		directionalLight.color=new THREE.Color(e);
 	});
 	gui.add(controls,'intensity',0,5).onChange(function(e){
-		spotLight.intensity=e;
+		directionalLight.intensity=e;
 	});
-	gui.add(controls,'distance',1,200).onChange(function(e){
-		spotLight.distance=e;
-	});
-	gui.add(controls,'exponent',0,100).onChange(function(e){
-		spotLight.exponent=e;
+	gui.add(controls,'distance',0,200).onChange(function(e){
+		directionalLight.distance=e;
 	});
 	gui.add(controls,'debug').onChange(function(e){
-		spotLight.shadowCameraVisible=e;
+		directionalLight.shadowCameraVisible=e;
 	});
 	gui.add(controls,'castShadow').onChange(function(e){
-		spotLight.castShadow=e;
+		directionalLight.castShadow=e;
 	});
 	gui.add(controls,'onlyShadow').onChange(function(e){
-		spotLight.onlyShadow=e;
+		directionalLight.onlyShadow=e;
 	});
 	gui.add(controls,'target',['Plane','Sphere','Cube']).onChange(function(e){
 		switch(e){
 			case 'Plane':
-				spotLight.target=plane;
+				directionalLight.target=plane;
 				break;
 			case 'Sphere':
-				spotLight.target=sphere;
+				directionalLight.target=sphere;
 				break;
 			case 'Cube':
-				spotLight.target=cube;
+				directionalLight.target=cube;
 				break;
 		}
-	});
-	gui.add(controls,'stopMovingLight').onChange(function(e){
-		stopMovingLight=e;
 	});
 	render();
 	function render(){
@@ -155,22 +148,11 @@ $(function(){
 		step+=controls.boundingSpeed;
 		sphere.position.x=20+(10*Math.cos(step));
 		sphere.position.y=2+(10*Math.abs(Math.sin(step)));
-		if(!stopMovingLight){
-			if(phase>2*Math.PI){
-				invert=invert*-1;
-				phase-=2*Math.PI;
-			}else{
-				phase+=controls.rotationSpeed;
-			}
-			sphereLightMesh.position.z=+(7*(Math.sin(phase)));
-			sphereLightMesh.position.x=+(14*(Math.cos(phase)));
-			sphereLightMesh.position.y=10;
-			if(invert<0){
-				var pivot=14;
-				sphereLightMesh.position.x=(invert*(sphereLightMesh.position.x-pivot))+pivot;
-			}
-			spotLight.position.copy(sphereLightMesh.position);
-		}
+		
+		sphereLightMesh.position.z=-8;
+		sphereLightMesh.position.x=+(27*(Math.sin(step/3)));
+		sphereLightMesh.position.y=10+(26*(Math.cos(step/3)));
+		directionalLight.position.copy(sphereLightMesh.position);
 		requestAnimationFrame(render);
 		renderer.render(scene,camera);
 	}
