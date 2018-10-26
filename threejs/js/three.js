@@ -34727,6 +34727,5 @@ THREE.MorphBlendMesh.prototype.update = function ( delta ) {
 	}
 
 };
-// export default THREE;
-module.exports=THREE;
+
 
