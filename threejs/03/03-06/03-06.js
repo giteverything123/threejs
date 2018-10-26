@@ -12,7 +12,7 @@ require('script-loader!../../js/ShaderPass.js');
 require('script-loader!../../js/FXAAShader.js');
 require('script-loader!../../js/MaskPass.js');
 $(function(){
-	
+	//注意该例子在mac上可能跑不通
 	var stats=initStats();
 	var scene=new THREE.Scene();
 	var camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
@@ -74,7 +74,7 @@ $(function(){
 	areaLight3.height=9.9;
 	scene.add(areaLight3);
 
-	var planeGeometry1=new THREE.BoxGeometry(4,10,0);
+	var planeGeometry1=new THREE.BoxGeometry(4,10,0);//注意9.9和10之间差一点是有原因的
 	var planeGeometry1Mat=new THREE.MeshBasicMaterial({color:0xff0000});
 	var plane1=new THREE.Mesh(planeGeometry1,planeGeometry1Mat);
 	plane1.position.copy(areaLight1.position);//是rotation之前的position
