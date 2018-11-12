@@ -11,7 +11,7 @@ module.exports=merge(common,{
 	},
 	plugins:[
 		new OpenBrowserPlugin({
-			browser:'chrome'
+			browser:'google chrome'
 		}),
 		new webpack.HotModuleReplacementPlugin()
 	]
