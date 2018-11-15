@@ -2,9 +2,7 @@ require('../../css/common.css');
 const $=require('jquery');
 const THREE=require('../../js/three.js');
 const Stats=require('../../js/stats.js').default;
-const dat=require('../../js/dat.gui.js').default;
-//import {cube} from '../../js/math.js';
-//cube();
+const dat=require('../../js/dat.gui.js').
 $(function(){
 	var scene=new THREE.Scene();
 	var camera=new THREE.PerspectiveCamera(55,window.innerWidth/window.innerHeight,0.1,1000);

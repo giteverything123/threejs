@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>雪花</title>
+	<meta charset="utf-8">
+	<meta name='viewport' content="width=device-width,initial-scale=1.0,user-scalable=no">
+	<script id='vertex-shader' type='x-shader/x-vertex'>
+		attribute vec4 vPosition;
+		void main(){
+			gl_Position=vPosition;
+		}
+	</script>
+	<script id='fragment-shader' type="x-shader/x-fragment">
+		precision mediump float;
+		void main(){
+			gl_FragColor=vec4(1.0,0.0,0.0,1.0);
+		}
+	</script>
+	<script src="../Common/webgl-utils.js"></script>
+	<script src="../Common/initShaders.js"></script>
+	<script src="../Common/MV.js"></script>
+</head>
+<body>
+	<!-- 可参考基于分形算法的手绘山体生成技术研究 -->
+	<!-- 三维分形地形真实感绘制 -->
+	<canvas id='gl-canvas' width="512" height="512"></canvas>
+	<script  type='text/javascript'>
+			var gl;
+			var points=[];
+			var iterationtime=3;//迭代次数
+			var vertices=[//定义正三角形的三个点
+				vec2(0,0.5*Math.pow(3,0.5)),
+				vec2(-0.5,0),
+				vec2(0.5,0)
+			];
+			window.onload=function init(){
+				var canvas=document.getElementById('gl-canvas');
+				gl=WebGLUtils.setupWebGL(canvas);
+				if(!gl){
+					alert("WebGl isn't available");
+				}
+
+				
+
+				gl.viewport(0,0,canvas.width,canvas.height);
+				gl.clearColor(1.0,1.0,1.0,1.0);
+				var program=initShaders(gl,"vertex-shader","fragment-shader");
+				gl.useProgram(program);
+
+				//把数据加载到GPU中
+				var bufferId=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,bufferId);
+				gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
+
+				var vPosition=gl.getAttribLocation(program,"vPosition");
+				gl.vertexAttribPointer(vPosition,2,gl.FLOAT,false,0,0);
+				gl.enableVertexAttribArray(vPosition);
+				render();
+			}
+
+
+
+			function killline(point1,point2,point3,count){//
+				//首先计算三角形的重心
+				var core=vec2((point1[0]+point2[0]+point3[0])/3,(point1[1]+point2[1]+point3[1])/3);
+				var long,p,e1,e2,arr1,arr2,t,x1,x2,y1,y2,distance1,distance2,arr1,arr2,pt1,pt2,k,k1;
+				var gtt=[];
+				//首先计算边长
+				//先计算x坐标系的差值，y坐标系的差值
+				var xmind=point2[0]-point1[0],ymind=point2[1]-point1[1];
+				//如果xmind==0的话，说明它们的连线是一条垂线
+				if(xmind==0){
+					//则p点的y坐标为两个点的中坐标的平均值，设它为e2
+					e2=(point1[1]+point2[1])/2;
+					//p点的x坐标可能为两个，所以我们要排除一个，排除的条件就是到core的距离哪个大
+					x1=point1[0]+(Math.pow(3,0.5)*ymind)/6;
+					x2=point1[0]-(Math.pow(3,0.5)*ymind)/6;
+					arr1=[x1,e2];
+					arr2=[x2,e2];//这是两个可能的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point1[0]+(1/3)*point2[0]),((2/3)*point1[1]+(1/3)*point2[1]));
+					pt2=vec2(((1/3)*point1[0]+(2/3)*point2[0]),((1/3)*point1[1]+(2/3)*point2[1]));
+					gtt.push(point1,pt1,pt1,p,p,pt2,pt2,point2);
+				}else if(ymind==0){//如果y坐标相等则说明它们在一条横线上
+					e1=(point1[0]+point2[0])/2;
+					y1=point1[1]+(Math.pow(3,0.5)*xmind)/6;
+					y2=point1[1]-(Math.pow(3,0.5)*xmind)/6;
+					arr1=[e1,y1];
+					arr2=[e1,y2];
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point1[0]+(1/3)*point2[0]),((2/3)*point1[1]+(1/3)*point2[1]));
+					pt2=vec2(((1/3)*point1[0]+(2/3)*point2[0]),((1/3)*point1[1]+(2/3)*point2[1]));
+					gtt.push(point1,pt1,pt1,p,p,pt2,pt2,point2);
+				}else{//以上两种情况都不是
+					//计算两个点的斜率
+					k=(point2[1]-point1[1])/(point2[0]-point1[0]);
+					//所以与这两天直线所确定的线垂直的线的斜率为
+					k1=-1/k;
+					e1=(point1[0]+point2[0])/2;//point1,point2的中点
+					e2=(point1[1]+point2[1])/2;
+					//设一个数,方便计算
+					long=Math.pow(((point1[0]-point2[0])*(point1[0]-point2[0])+(point1[1]-point2[1])*(point1[1]-point2[1])),0.5);
+					t=long/(Math.pow(12*(1+k1*k1),0.5));
+					//console.log(t);
+					//则p的可能解有两个,我们设两个数组存储它们
+					var arr1=[e1+t,e2+k1*t],arr2=[e1-t,e2-k1*t];
+					//计算这两点到core的距离并以距离脚长的作为p的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					//取距离大的那个点为真正的点
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//再取得另外两个线上的点
+					pt1=vec2(((2/3)*point1[0]+(1/3)*point2[0]),((2/3)*point1[1]+(1/3)*point2[1]));
+					pt2=vec2(((1/3)*point1[0]+(2/3)*point2[0]),((1/3)*point1[1]+(2/3)*point2[1]));
+					gtt.push(point1,pt1,pt1,p,p,pt2,pt2,point2);
+				}
+
+				//第二条线-------------------------------------------------
+				var xmind1=point3[0]-point2[0],ymind1=point3[1]-point2[1];
+				//如果xmind==0的话，说明它们的连线是一条垂线
+				if(xmind1==0){
+					//则p点的y坐标为两个点的中坐标的平均值，设它为e2
+					e2=(point3[1]+point2[1])/2;
+					//p点的x坐标可能为两个，所以我们要排除一个，排除的条件就是到core的距离哪个大
+					x1=point2[0]+(Math.pow(3,0.5)*ymind1)/6;
+					x2=point2[0]-(Math.pow(3,0.5)*ymind1)/6;
+					arr1=[x1,e2];
+					arr2=[x2,e2];//这是两个可能的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point2[0]+(1/3)*point3[0]),((2/3)*point2[1]+(1/3)*point3[1]));
+					pt2=vec2(((1/3)*point2[0]+(2/3)*point3[0]),((1/3)*point2[1]+(2/3)*point3[1]));
+					gtt.push(point2,pt1,pt1,p,p,pt2,pt2,point3);
+				}else if(ymind1==0){//如果y坐标相等则说明它们在一条横线上
+					e1=(point2[0]+point3[0])/2;
+					y1=point2[1]+(Math.pow(3,0.5)*xmind1)/6;
+					y2=point2[1]-(Math.pow(3,0.5)*xmind1)/6;
+					arr1=[e1,y1];
+					arr2=[e1,y2];
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point2[0]+(1/3)*point3[0]),((2/3)*point2[1]+(1/3)*point3[1]));
+					pt2=vec2(((1/3)*point2[0]+(2/3)*point3[0]),((1/3)*point2[1]+(2/3)*point3[1]));
+					gtt.push(point2,pt1,pt1,p,p,pt2,pt2,point3);
+				}else{//以上两种情况都不是
+					//计算两个点的斜率
+					k=(point2[1]-point3[1])/(point2[0]-point3[0]);
+					//所以与这两天直线所确定的线垂直的线的斜率为
+					k1=-1/k;
+					e1=(point2[0]+point3[0])/2;//point1,point2的中点
+					e2=(point2[1]+point3[1])/2;
+					//设一个数,方便计算
+					long=Math.pow(((point2[0]-point3[0])*(point2[0]-point3[0])+(point2[1]-point3[1])*(point2[1]-point3[1])),0.5);
+					t=long/(Math.pow(12*(1+k1*k1),0.5));
+					//console.log(t);
+					//则p的可能解有两个,我们设两个数组存储它们
+					var arr1=[e1+t,e2+k1*t],arr2=[e1-t,e2-k1*t];
+					//计算这两点到core的距离并以距离脚长的作为p的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					//取距离大的那个点为真正的点
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//再取得另外两个线上的点
+					pt1=vec2(((2/3)*point2[0]+(1/3)*point3[0]),((2/3)*point2[1]+(1/3)*point3[1]));
+					pt2=vec2(((1/3)*point2[0]+(2/3)*point3[0]),((1/3)*point2[1]+(2/3)*point3[1]));
+					gtt.push(point2,pt1,pt1,p,p,pt2,pt2,point3);
+				}
+				//下面来计算第三条条直线
+				//第三条比较特殊，如果是第一次迭代则要算第三条，否则不算，只算前两条
+				var xmind2=point1[0]-point3[0],ymind2=point1[1]-point3[1];
+				//如果xmind==0的话，说明它们的连线是一条垂线
+				if(xmind2==0){
+					//则p点的y坐标为两个点的中坐标的平均值，设它为e2
+					e2=(point3[1]+point1[1])/2;
+					//p点的x坐标可能为两个，所以我们要排除一个，排除的条件就是到core的距离哪个大
+					x1=point1[0]+(Math.pow(3,0.5)*ymind2)/6;
+					x2=point1[0]-(Math.pow(3,0.5)*ymind2)/6;
+					arr1=[x1,e2];
+					arr2=[x2,e2];//这是两个可能的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point3[0]+(1/3)*point1[0]),((2/3)*point3[1]+(1/3)*point1[1]));
+					pt2=vec2(((1/3)*point3[0]+(2/3)*point1[0]),((1/3)*point3[1]+(2/3)*point1[1]));
+					gtt.push(point3,pt1,pt1,p,p,pt2,pt2,point1);
+				}else if(ymind2==0){//如果y坐标相等则说明它们在一条横线上
+					e1=(point1[0]+point3[0])/2;
+					y1=point1[1]+(Math.pow(3,0.5)*xmind2)/6;
+					y2=point1[1]-(Math.pow(3,0.5)*xmind2)/6;
+					arr1=[e1,y1];
+					arr2=[e1,y2];
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//另外两个点为
+					pt1=vec2(((2/3)*point3[0]+(1/3)*point1[0]),((2/3)*point3[1]+(1/3)*point1[1]));
+					pt2=vec2(((1/3)*point3[0]+(2/3)*point1[0]),((1/3)*point3[1]+(2/3)*point1[1]));
+					gtt.push(point3,pt1,pt1,p,p,pt2,pt2,point1);
+				}else{//以上两种情况都不是
+					//计算两个点的斜率
+					k=(point3[1]-point1[1])/(point3[0]-point1[0]);
+					//所以与这两天直线所确定的线垂直的线的斜率为
+					k1=-1/k;
+					e1=(point1[0]+point3[0])/2;//point1,point2的中点
+					e2=(point1[1]+point3[1])/2;
+					//设一个数,方便计算
+					long=Math.pow(((point3[0]-point1[0])*(point3[0]-point1[0])+(point3[1]-point1[1])*(point3[1]-point1[1])),0.5);
+					t=long/(Math.pow(12*(1+k1*k1),0.5));
+					//console.log(t);
+					//则p的可能解有两个,我们设两个数组存储它们
+					var arr1=[e1+t,e2+k1*t],arr2=[e1-t,e2-k1*t];
+					//计算这两点到core的距离并以距离脚长的作为p的坐标
+					distance1=(arr1[0]-core[0])*(arr1[0]-core[0])+(arr1[1]-core[1])*(arr1[1]-core[1]);
+					distance2=(arr2[0]-core[0])*(arr2[0]-core[0])+(arr2[1]-core[1])*(arr2[1]-core[1]);
+					//取距离大的那个点为真正的点
+					if(distance1>=distance2){
+						p=vec2(arr1[0],arr1[1]);
+					}else{
+						p=vec2(arr2[0],arr2[1]);
+					}
+					//再取得另外两个线上的点
+					pt1=vec2(((2/3)*point3[0]+(1/3)*point1[0]),((2/3)*point3[1]+(1/3)*point1[1]));
+					pt2=vec2(((1/3)*point3[0]+(2/3)*point1[0]),((1/3)*point3[1]+(2/3)*point1[1]));
+					gtt.push(point3,pt1,pt1,p,p,pt2,pt2,point1);
+				}
+				//如果是一次迭代，gtt里面的点都放到points数组里面
+				//如果不是则选择其中的一部分放到points里面
+				//除非count==0，否则是不能把点放到points数组里面的
+				if(count==0){
+					points=points.concat(gtt);
+				}else{
+					--count;
+					killline(gtt[0],gtt[2],gtt[22],count);
+					killline(gtt[4],gtt[6],gtt[2],count);
+					killline(gtt[8],gtt[10],gtt[6],count);
+					killline(gtt[12],gtt[14],gtt[10],count);
+					killline(gtt[16],gtt[18],gtt[14],count);
+					killline(gtt[20],gtt[22],gtt[18],count);
+				}
+				
+			}
+
+			killline(vertices[0],vertices[1],vertices[2],iterationtime);
+			
+
+			
+			function render(){
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.drawArrays(gl.LINES,0,points.length);
+			}
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

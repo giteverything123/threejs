@@ -29,9 +29,17 @@
 			var gl;
 			var points=[];
 			var NumTimesToSubdivide=6;
-			var r1=0.2;
+			var rdm=[1];
 			window.onload=function init(){
 				var canvas=document.getElementById('gl-canvas');
+				for(var i=0;i<NumTimesToSubdivide;i++){//随机数
+					var a=Math.random();
+					if(a>=0.5){
+						rdm.push(1);
+					}else{
+						rdm.push(-1);
+					}
+				}
 				gl=WebGLUtils.setupWebGL(canvas);
 				if(!gl){
 					alert("WebGl isn't available");
@@ -39,7 +47,10 @@
 				var vertices=[
 					vec2(0,0.9),
 					vec2(-0.9,-0.9),
-					vec2(0.9,-0.9)
+					vec2(0.9,-0.9),
+					vec2(0,0.3),
+					vec2(-0.9,-1.0),
+					vec2(0.8,-0.9)
 				];
 				divideTriangle(vertices[0],vertices[1],vertices[2],NumTimesToSubdivide);
 				gl.viewport(0,0,canvas.width,canvas.height);
@@ -62,10 +73,11 @@
 				var dis_ab=Math.pow(((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])),0.5);
 				var dis_ac=Math.pow(((a[0]-c[0])*(a[0]-c[0])+(a[1]-c[1])*(a[1]-c[1])),0.5);
 				var dis_bc=Math.pow(((b[0]-c[0])*(b[0]-c[0])+(b[1]-c[1])*(b[1]-c[1])),0.5);
-				
 				var p=mix(a,b,0.5),q=mix(a,c,0.5),s=mix(b,c,0.5);
 				var x1,y1,x2,y2,x3,y3;
 				var p_plus,q_plus,s_plus;
+				var t=rdm[count];
+				var r1=t*0.25*Math.pow(2,-count*0.02);
 				x1=p[0];
 				y1=p[1]+r1*dis_ab;
 				x2=q[0];
@@ -88,7 +100,6 @@
 					divideTriangle(q_plus,s_plus,c,count);
 				}
 			}
-
 			function render(){
 				gl.clear(gl.COLOR_BUFFER_BIT);
 				gl.drawArrays(gl.LINES,0,points.length);
