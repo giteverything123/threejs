@@ -4,14 +4,6 @@
 	<title>第一个示列</title>
 	<meta charset="utf-8">
 	<meta name='viewport' content="width=device-width,initial-scale=1.0,user-scalable=no">
-	<style type="text/css">
-		*{
-			padding:0;
-			margin:0;
-			box-sizing:border-box;
-		}
-
-	</style>
 	<script id='vertex-shader' type='x-shader/x-vertex'>
 		attribute vec4 vPosition;
 		attribute vec4 vColor;
