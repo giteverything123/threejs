@@ -2,30 +2,10 @@ const path=require('path');
 const glob=require('glob');
 const htmlwebpackplugin=require('html-webpack-plugin');
 const cleanwebpackplugin=require('clean-webpack-plugin');
-let htmlOutputs=(()=>{
-	let result=[];
-	let pathArr=['./01/**/*.html'];
-	let pathReg=/^\.\/\d{2}\/\d{2}-\d{2}\/index\.html$/;
-	pathArr.forEach((pathItem)=>{
-		glob.sync(pathItem).forEach((entry)=>{
-			if(entry.match(pathReg)){
-				console.log(entry);
-				var titleReg=/\d{2}-\d{2}(?=\/index\.html)/;
-				var titlename=entry.match(titleReg)[0];
-				result.push(new htmlwebpackplugin({
-					template:entry,
-					filename:'index.html',
-					title:titlename
-				}));
-			}
-		});
-	});
-	return result;
-})();
-console.log('yes');
+
 let entrys=(()=>{
 	let result={};
-	let pathArr=['./01/**/*.js'];
+	let pathArr=['./03/**/*.js'];
 	let pathReg=/^\.\/\d{2}\/\d{2}-\d{2}\/\d{2}-\d{2}\.js$/;
 	pathArr.forEach((pathItem)=>{
 		glob.sync(pathItem).forEach((entry)=>{
@@ -38,6 +18,29 @@ let entrys=(()=>{
 	});
 	return result;
 })();
+
+let htmlOutputs=(()=>{
+	let result=[];
+	let pathArr=['./03/**/*.html'];
+	let pathReg=/^\.\/\d{2}\/\d{2}-\d{2}\/index\.html$/;
+	pathArr.forEach((pathItem)=>{
+		glob.sync(pathItem).forEach((entry)=>{
+			if(entry.match(pathReg)){
+				var filenameReg=/\d{2}-\d{2}(?=\/index\.html)/;
+				var filename=entry.match(filenameReg)[0]+'.html';
+				var chunkname=entry.match(filenameReg)[0];
+				result.push(new htmlwebpackplugin({
+					template:entry,
+					filename:filename,
+					chunks:[chunkname]
+				}));
+			}
+		});
+	});
+	return result;
+})();
+
+entrys['three']='./js/three';
 module.exports={
 	entry:entrys,
 	output:{
@@ -53,8 +56,13 @@ module.exports={
 			},
 			{
 				test:/\.(png|jpg)$/,
-				use:['url-loader?limit=2048']
+				use:['url-loader']
 			},
+			{
+				test:/\.js$/,
+				exclude:/(node_modules)/,
+				use:{loader:'babel-loader'}
+			}
 		]
 	},
 	plugins:[

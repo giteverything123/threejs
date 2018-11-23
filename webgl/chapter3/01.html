@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>第一个示列</title>
+	<meta charset="utf-8">
+	<meta name='viewport' content="width=device-width,initial-scale=1.0,user-scalable=no">
+	<style type="text/css">
+		*{
+			padding:0;
+			margin:0;
+			box-sizing:border-box;
+		}
+
+	</style>
+	<script id='vertex-shader' type='x-shader/x-vertex'>
+		attribute vec4 vPosition;
+		attribute vec4 vColor;
+		varying vec4 fColor;
+		void main(){
+			gl_Position=vPosition;
+			fColor=vColor;
+		}
+	</script>
+	<script id='fragment-shader' type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec4 fColor;
+		void main(){
+			gl_FragColor=fColor;
+		}
+	</script>
+	<script src="../Common/webgl-utils.js"></script>
+	<script src="../Common/initShaders.js"></script>
+	<script src="../Common/MV.js"></script>
+</head>
+<body>
+	<canvas id='gl-canvas' width="512" height="512"></canvas>
+	<select id="mymenu">
+		<option value="0">Black</option>
+		<option value="1">Red</option>
+		<option value="2">Yellow</option>
+		<option value="3">Green</option>
+		<option value="4">Blue</option>
+		<option value="5">Magenta</option>
+		<option value="6">Cyan</option>
+	</select>
+	<script  type='text/javascript'>
+			var canvas;
+			var gl;
+			var maxNumTriangles=200;
+			var maxNumVertices=3*maxNumTriangles;
+			var index=0;
+			var first=true;
+
+			var t1,t2,t3,t4;
+			var cIndex=0;
+
+			var colors=[
+				vec4(0.0,0.0,0.0,1.0),
+				vec4(1.0,0.0,0.0,1.0),
+				vec4(1.0,1.0,0.0,1.0),
+				vec4(0.0,1.0,0.0,1.0),
+				vec4(0.0,0.0,1.0,1.0),
+				vec4(1.0,0.0,1.0,1.0),
+				vec4(0.0,1.0,1.0,1.0)
+			];
+
+			window.onload=function init(){
+				canvas=document.getElementById("gl-canvas");
+				gl=WebGLUtils.setupWebGL(canvas);
+				gl.viewport(0,0,canvas.width,canvas.height);
+				gl.clearColor(0.8,0.8,0.8,1.0);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				var program=initShaders(gl,"vertex-shader","fragment-shader");
+				gl.useProgram(program);
+
+				var vBuffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer);
+				//分配空间
+				gl.bufferData(gl.ARRAY_BUFFER,8*maxNumVertices,gl.STATIC_DRAW);
+				//上面函数的参数的意思是
+				//1.target 可为gl.ARRAY_BUFFER,gl.ELEMENT_ARRAY_BUFFER
+				//2.写入缓冲区对象的数据
+				//3.表示程序将如何使用存储在缓冲区对象中的数据
+				var vPosition=gl.getAttribLocation(program,"vPosition");
+				gl.vertexAttribPointer(vPosition,2,gl.FLOAT,false,0,0);
+				//上面一个函数参数的意思是
+				//1.指定待分配attribute变量的存储位置
+				//2.指定缓冲区中每个顶点的分量个数。
+				//3.用什么类型的数据指定数据格式
+				//4.传入false或true，表明是否将非浮点类型的数据归一化到[0,1]或[-1,1]之间。
+				//5.指定相邻两个顶点间的字节数，默认为0
+				//6.指定缓冲区对象中的偏移量，即attribute变量从缓冲区中何处开始存储。
+				gl.enableVertexAttribArray(vPosition);
+				//开启着色器的顶点属性
+				
+				var cBuffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,cBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER,16*maxNumVertices,gl.STATIC_DRAW);
+				var vColor=gl.getAttribLocation(program,"vColor");
+				gl.vertexAttribPointer(vColor,4,gl.FLOAT,false,0,0);
+				gl.enableVertexAttribArray(vColor);
+
+				var m=document.getElementById("mymenu");
+				m.addEventListener("click",function(){
+					cIndex=m.selectedIndex;
+				});
+
+				canvas.addEventListener("mousedown",function(event){
+					gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer);
+					if(first){
+						first=false;
+						gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer);
+						t1=vec2(2*event.clientX/canvas.width-1,2*(canvas.height-event.clientY)/canvas.height-1);
+					}else{
+						first=true;
+						t2=vec2(2*event.clientX/canvas.width-1,2*(canvas.height-event.clientY)/canvas.height-1);
+						t3=vec2(t1[0],t2[1]);
+						t4=vec2(t2[0],t1[1]);
+						//     t1---------t4
+						//     |           |
+						//     |           |
+						//     t3---------t2
+						gl.bufferSubData(gl.ARRAY_BUFFER,8*index,flatten(t1));
+						gl.bufferSubData(gl.ARRAY_BUFFER,8*(index+1),flatten(t3));
+						gl.bufferSubData(gl.ARRAY_BUFFER,8*(index+2),flatten(t2));
+						gl.bufferSubData(gl.ARRAY_BUFFER,8*(index+3),flatten(t4));
+						//每个顶点有2个坐标值，flatten把t1,t2,t3,t4转化成Float32Array,即32位浮点数，1位等于0.125 byte ,所以32位等于4字节，两个坐标的话就为8个字节，所以乘以8
+						
+						gl.bindBuffer(gl.ARRAY_BUFFER,cBuffer);
+						//切换
+						t=vec4(colors[cIndex]);
+						gl.bufferSubData(gl.ARRAY_BUFFER,16*index,flatten(t));
+						gl.bufferSubData(gl.ARRAY_BUFFER,16*(index+1),flatten(t));
+						gl.bufferSubData(gl.ARRAY_BUFFER,16*(index+2),flatten(t));
+						gl.bufferSubData(gl.ARRAY_BUFFER,16*(index+3),flatten(t));
+						index+=4;
+					}
+				});
+				render();
+			}
+
+			function render(){
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				for(var i=0;i<index;i+=4){
+					gl.drawArrays(gl.TRIANGLE_FAN,i,4);
+				}
+				window.requestAnimationFrame(render);
+			}
+	</script>
+	
+</body>
+</html>
