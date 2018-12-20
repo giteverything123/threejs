@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>练习题4.33</title>
+	<meta charset="utf-8">
+	<meta name='viewport' content="width=device-width,initial-scale=1.0,user-scalable=no">
+	<style type="text/css">
+		*{
+			padding:0;
+			margin:0;
+			box-sizing:border-box;
+		}
+		#gl-canvas{
+			border:1px solid red;
+		}
+		#rangeipt{
+			margin-top:8px;
+			width:512px;
+			outline: none;
+			height:3px;
+			background:-webkit-linear-gradient(#61bd12,#61db12) no-repeat,#ddd;
+			/* background-size: 30% 100%; */
+			-webkit-appearance: none;
+		}
+		input[type=range]::-webkit-slider-thumb {  
+			 -webkit-appearance: none;/*清除系统默认样式*/  
+				height:16px;/*拖动块高度*/  
+       			width: 16px;/*拖动块宽度*/  
+       			background: #fff;/*拖动块背景*/  
+				border-radius: 50%; /*外观设置为圆形*/  
+	 			border: solid 1px #ddd; /*设置边框*/  
+		}
+	</style>
+	<script id='vertex-shader' type='x-shader/x-vertex'>
+		attribute vec4 vPosition;
+		uniform float angle;
+		void main(){
+			mat4 modelMatrix=mat4(
+				1.0-2.0*sin(angle/2.0)*sin(angle/2.0),-2.0*cos(angle/2.0)*sin(angle/2.0),0.0,0.0,
+				2.0*cos(angle/2.0)*sin(angle/2.0),1.0-2.0*sin(angle/2.0)*sin(angle/2.0),0.0,0.0,
+				0.0,0.0,1.0,0.0,
+				0.0,0.0,0.0,1.0
+			);
+			gl_Position=modelMatrix*vPosition;
+		}
+	</script>
+	<script id='fragment-shader' type="x-shader/x-fragment">
+		precision mediump float;
+		void main(){
+			gl_FragColor=vec4(1.0,0.0,0.0,1.0);
+		}
+	</script>
+	<script src="../Common/webgl-utils.js"></script>
+	<script src="../Common/initShaders.js"></script>
+	<script src="../Common/MV.js"></script>
+</head>
+<body>
+	<canvas id='gl-canvas' width="512" height="512"></canvas>
+	<div>
+		<div id="num">f=0.0度</div>
+		<input type="range" min="0.0" max="90.0" step="1.0" id="rangeipt" value='0.0'> 
+	</div>
+	
+	<script  type='text/javascript'>
+	// 我们假设绕z轴旋转，则v(0,0,1);
+	//webgl是弧度制的
+
+			//		  ——————————	
+			//       |		  	|
+			//       |		  	|
+			//       |		 	|
+			//		  ——————————	
+			let points=[-0.5,0.5,-0.5,-0.5,0.5,0.5,-0.5,-0.5,0.5,-0.5,0.5,0.5];//这是存储的是正方形的顶点数组
+			let gl;
+
+			function render(fvalue){
+				gl.clearColor(1.0,1.0,1.0,1.0);
+				let program=initShaders(gl,'vertex-shader','fragment-shader');
+				gl.useProgram(program);
+				//把数据加载的GPU中
+				let buffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+				gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
+				let vPosition=gl.getAttribLocation(program,'vPosition');
+				gl.vertexAttribPointer(vPosition,2,gl.FLOAT,false,0,0);
+				//上面一个函数参数的意思是
+				//1.指定待分配attribute变量的存储位置
+				//2.指定缓冲区中每个顶点的分量个数。
+				//3.用什么类型的数据指定数据格式
+				//4.传入false或true，表明是否将非浮点类型的数据归一化到[0,1]或[-1,1]之间。
+				//5.指定相邻两个顶点间的字节数，默认为0
+				//6.指定缓冲区对象中的偏移量，即attribute变量从缓冲区中何处开始存储。
+				gl.enableVertexAttribArray(vPosition);
+				//我们假设绕着y轴进行旋转，且旋转角度为theta度，则旋转矩阵为
+				let angle=gl.getUniformLocation(program,'angle');
+				gl.uniform1f(angle,fvalue);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.drawArrays(gl.TRIANGLES,0,6);//注意这里的6是一共的顶点个数，而不是points.length
+			}
+
+			let rangeInput=document.getElementById('rangeipt');
+			let num=document.getElementById('num');
+
+			rangeInput.addEventListener('change',(e)=>{
+				num.innerHTML=`f=${Number(e.target.value).toFixed(1)}度`;
+				let radian=e.target.value*Math.PI/180;
+				render(radian);
+			});
+
+			window.onload=function(){
+				let canvas=document.getElementById('gl-canvas');
+				gl=WebGLUtils.setupWebGL(canvas);
+				if(!gl){
+					alert("webgl isn't available");
+				}
+				gl.viewport(0,0,canvas.width,canvas.height);
+				let num=rangeInput.value;
+				let radian=num*Math.PI/180;
+				render(radian);
+			}
+	</script>
+	
+</body>
+</html>
