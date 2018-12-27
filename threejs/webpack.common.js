@@ -18,7 +18,7 @@ let entrys=(()=>{
 	});
 	return result;
 })();
-// console.log(entrys);
+
 let htmlOutputs=(()=>{
 	let result=[];
 	let pathArr=['./03/**/*.html'];
@@ -40,7 +40,6 @@ let htmlOutputs=(()=>{
 	return result;
 })();
 
-// console.log(entrys);
 entrys['three']='./js/three';
 module.exports={
 	entry:entrys,
