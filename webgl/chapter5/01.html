@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>平行投影</title>
+	<meta charset="utf-8">
+	<meta name='viewport' content="width=device-width,initial-scale=1.0,user-scalable=no">
+	<style type="text/css">
+		*{
+			padding:0;
+			margin:0;
+			box-sizing:border-box;
+		}
+		#gl-canvas{
+			border:1px solid red;
+		}
+		#rangeipt{
+			margin-top:8px;
+			width:512px;
+			outline: none;
+			height:3px;
+			background:-webkit-linear-gradient(#61bd12,#61db12) no-repeat,#ddd;
+			/* background-size: 30% 100%; */
+			-webkit-appearance: none;
+		}
+		input[type=range]::-webkit-slider-thumb {  
+			 -webkit-appearance: none;/*清除系统默认样式*/  
+				height:16px;/*拖动块高度*/  
+       			width: 16px;/*拖动块宽度*/  
+       			background: #fff;/*拖动块背景*/  
+				border-radius: 50%; /*外观设置为圆形*/  
+	 			border: solid 1px #ddd; /*设置边框*/  
+		}
+	</style>
+	<script id='vertex-shader' type='x-shader/x-vertex'>
+		attribute vec4 vPosition;
+		attribute vec4 vColor;
+		uniform mat4 modelMatrix;
+		uniform mat4 proMatrix;
+		varying vec4 fColor;
+		void main(){
+			gl_Position=proMatrix*modelMatrix*;
+			fColor=vColor;
+		}
+	</script>
+	<script id='fragment-shader' type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec4 fColor;
+		void main(){
+			gl_FragColor=fColor;
+		}
+	</script>
+	<script src="../Common/webgl-utils.js"></script>
+	<script src="../Common/initShaders.js"></script>
+	<script src="../Common/MV.js"></script>
+</head>
+<body>
+	<canvas id='gl-canvas' width="512" height="512"></canvas>
+	<div>
+		<div id="num">f=0.0</div>
+		<input type="range" min="0.0" max="10.0" step="1.0" id="rangeipt" value='0.0'> 
+	</div>
+	
+	<script  type='text/javascript'>
+			//设定立方体的各顶点的坐标
+			let points=[
+				vec3(-1.0,1.0,-1.0),
+				vec3(-1.0,1.0,1.0),
+				vec3(1.0,1.0,1.0),
+				vec3(1.0,1.0,-1.0),
+				vec3(-1.0,-1.0,-1.0),
+				vec3(-1.0,-1.0,1.0),
+				vec3(1.0,-1.0,1.0),
+				vec3(1.0,-1.0,-1.0)
+			];
+			let colors=[//这是每个点对应的颜色
+				1.0,1.0,1.0,1.0,1.0,1.0,  // v0 White
+				-1.0,1.0,1.0,1.0, 0.0,1.0,  // v1 Magenta
+				-1.0,-1.0,1.0,1.0,0.0,0.0,  // v2 Red
+				1.0,-1.0,1.0,1.0,1.0,0.0,  // v3 Yellow
+				1.0,-1.0,-1.0,0.0,1.0,0.0,  // v4 Green
+				1.0,1.0,-1.0,0.0,1.0,1.0,  // v5 Cyan
+				-1.0,1.0,-1.0,0.0,0.0,1.0,  // v6 Blue
+				-1.0,-1.0,-1.0,0.0,0.0,0.0   // v7 Black
+			];
+			let pointIndex=[
+				2,6,7,7,3,2,//第一个面
+				7,8,3,8,4,3,//第二个面
+				8,5,1,1,4,8,//第三个面
+				1,5,6,6,2,1,//第四个面
+				1,2,3,3,4,1,//第五个面
+				5,8,7,7,6,5//第六个面
+			];
+			function render(fvalue){
+				gl.clearColor(1.0,1.0,1.0,1.0);
+				let program=initShaders(gl,'vertex-shader','fragment-shader');
+				gl.useProgram(program);
+				//把数据加载的GPU中
+				let buffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+				gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
+				let vPosition=gl.getAttribLocation(program,'vPosition');
+				gl.vertexAttribPointer(vPosition,2,gl.FLOAT,false,0,0);
+				//上面一个函数参数的意思是
+				//1.指定待分配attribute变量的存储位置
+				//2.指定缓冲区中每个顶点的分量个数。
+				//3.用什么类型的数据指定数据格式
+				//4.传入false或true，表明是否将非浮点类型的数据归一化到[0,1]或[-1,1]之间。
+				//5.指定相邻两个顶点间的字节数，默认为0
+				//6.指定缓冲区对象中的偏移量，即attribute变量从缓冲区中何处开始存储。
+				gl.enableVertexAttribArray(vPosition);
+				//我们假设绕着y轴进行旋转，且旋转角度为theta度，则旋转矩阵为
+				let f=gl.getUniformLocation(program,'f');
+				gl.uniform1f(f,fvalue);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.drawArrays(gl.TRIANGLES,0,points.length);
+			}
+
+			let rangeInput=document.getElementById('rangeipt');
+			let num=document.getElementById('num');
+			rangeInput.addEventListener('change',(e)=>{
+				num.innerHTML=`f=${Number(e.target.value).toFixed(1)}`;
+				render(e.target.value);
+			});
+			window.onload=function(){
+				let canvas=document.getElementById('gl-canvas');
+				gl=WebGLUtils.setupWebGL(canvas);
+				if(!gl){
+					alert("webgl isn't available");
+				}
+				let vertices=[
+					vec2(-1,-1),
+					vec2(0,1),
+					vec2(1,-1)
+				];
+				divideTriangle(vertices[0],vertices[1],vertices[2],5);
+				gl.viewport(0,0,canvas.width,canvas.height);
+				let num=rangeInput.value;
+				render(num);
+			}
+	</script>
+	
+</body>
+</html>
