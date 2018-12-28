@@ -13,7 +13,7 @@
 		#gl-canvas{
 			border:1px solid red;
 		}
-		#rangeipt{
+		input{
 			margin-top:8px;
 			width:512px;
 			outline: none;
@@ -38,7 +38,7 @@
 		uniform mat4 proMatrix;
 		varying vec4 fColor;
 		void main(){
-			gl_Position=proMatrix*modelMatrix*;
+			gl_Position=proMatrix*modelMatrix*vPosition;
 			fColor=vColor;
 		}
 	</script>
@@ -56,50 +56,86 @@
 <body>
 	<canvas id='gl-canvas' width="512" height="512"></canvas>
 	<div>
-		<div id="num">f=0.0</div>
-		<input type="range" min="0.0" max="10.0" step="1.0" id="rangeipt" value='0.0'> 
+		<div id="num">eye距离原点的距离为=0.0</div>
+		<input type="range" min="0.0" max="10.0" step="0.1" id="rangeipt01" value='0.0'> 
 	</div>
-	
+	<div>
+		<div id="num02">eye围绕y轴旋转所得到的角度=0.0</div>
+		<input type="range" min="0.0" max="360.0" step="1" id="rangeipt02" value='0.0'> 
+	</div>
+	<div>
+		<div id="num03">eye与y=0的平面所成的角度=0.0</div>
+		<input type="range" min="0.0" max="360.0" step="1" id="rangeipt03" value='0.0'> 
+	</div>
+	<div>
+		<div id="num04">left的值为=-2.0</div>
+		<input type="range" min="-2.0" max="0.0" step="0.1" id="rangeipt04" value='-2.0'> 
+	</div>
+	<div>
+		<div id="num05">right的值为=2.0</div>
+		<input type="range" min="0.1" max="2.0" step="0.1" id="rangeipt05" value='1.0'> 
+	</div>
+	<div>
+		<div id="num06">bottom的值为=-2.0</div>
+		<input type="range" min="-2.0" max="0.0" step="0.1" id="rangeipt06" value='-2.0'> 
+	</div>
+	<div>
+		<div id="num07">top的值为=2.0</div>
+		<input type="range" min="0.1" max="2.0" step="0.1" id="rangeipt07" value='2.0'> 
+	</div>
+	<div>
+		<div id="num08">near的值为=-2.0</div>
+		<input type="range" min="-2.0" max="0.0" step="0.1" id="rangeipt08" value='-2.0'> 
+	</div>
+	<div>
+		<div id="num09">far的值为=2.0</div>
+		<input type="range" min="0.1" max="2.0" step="0.1" id="rangeipt09" value='2.0'> 
+	</div>
 	<script  type='text/javascript'>
 			//设定立方体的各顶点的坐标
 			let points=[
-				vec3(-1.0,1.0,-1.0),
-				vec3(-1.0,1.0,1.0),
-				vec3(1.0,1.0,1.0),
-				vec3(1.0,1.0,-1.0),
-				vec3(-1.0,-1.0,-1.0),
-				vec3(-1.0,-1.0,1.0),
-				vec3(1.0,-1.0,1.0),
-				vec3(1.0,-1.0,-1.0)
+				-1.0,1.0,-1.0,
+				-1.0,1.0,1.0,
+				1.0,1.0,1.0,
+				1.0,1.0,-1.0,
+				-1.0,-1.0,-1.0,
+				-1.0,-1.0,1.0,
+				1.0,-1.0,1.0,
+				1.0,-1.0,-1.0
 			];
 			let colors=[//这是每个点对应的颜色
-				1.0,1.0,1.0,1.0,1.0,1.0,  // v0 White
-				-1.0,1.0,1.0,1.0, 0.0,1.0,  // v1 Magenta
-				-1.0,-1.0,1.0,1.0,0.0,0.0,  // v2 Red
-				1.0,-1.0,1.0,1.0,1.0,0.0,  // v3 Yellow
-				1.0,-1.0,-1.0,0.0,1.0,0.0,  // v4 Green
-				1.0,1.0,-1.0,0.0,1.0,1.0,  // v5 Cyan
-				-1.0,1.0,-1.0,0.0,0.0,1.0,  // v6 Blue
-				-1.0,-1.0,-1.0,0.0,0.0,0.0   // v7 Black
+				1.0,1.0,1.0,  // v0 White
+				1.0,0.0,1.0,  // v1 Magenta
+				1.0,0.0,0.0,  // v2 Red
+				1.0,1.0,0.0,  // v3 Yellow
+				0.0,1.0,0.0,  // v4 Green
+				0.0,1.0,1.0,  // v5 Cyan
+				0.0,0.0,1.0,  // v6 Blue
+				0.0,0.0,0.0   // v7 Black
 			];
+			/*
+				1.索引是从0开始的
+				2.如果想看外表面各个点形成的必须符合右手螺旋坐标系
+			*/
 			let pointIndex=[
-				2,6,7,7,3,2,//第一个面
-				7,8,3,8,4,3,//第二个面
-				8,5,1,1,4,8,//第三个面
-				1,5,6,6,2,1,//第四个面
-				1,2,3,3,4,1,//第五个面
-				5,8,7,7,6,5//第六个面
+				1,5,6,6,2,1,//第一个面
+				6,7,2,7,3,2,//第二个面
+				7,4,0,0,3,7,//第三个面
+				0,4,5,5,1,0,//第四个面
+				0,1,2,2,3,0,//第五个面
+				4,7,6,6,5,4//第六个面
 			];
 			function render(fvalue){
-				gl.clearColor(1.0,1.0,1.0,1.0);
+				gl.clearColor(1.0,1.0,1.0,1.0);//指定背景色
+				gl.enable(gl.DEPTH_TEST);
 				let program=initShaders(gl,'vertex-shader','fragment-shader');
 				gl.useProgram(program);
 				//把数据加载的GPU中
-				let buffer=gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+				let vertexbuffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,vertexbuffer);//bindBuffer绑定的是和相对于的buffer绑定的
 				gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
 				let vPosition=gl.getAttribLocation(program,'vPosition');
-				gl.vertexAttribPointer(vPosition,2,gl.FLOAT,false,0,0);
+				gl.vertexAttribPointer(vPosition,3,gl.FLOAT,false,0,0);
 				//上面一个函数参数的意思是
 				//1.指定待分配attribute变量的存储位置
 				//2.指定缓冲区中每个顶点的分量个数。
@@ -108,18 +144,99 @@
 				//5.指定相邻两个顶点间的字节数，默认为0
 				//6.指定缓冲区对象中的偏移量，即attribute变量从缓冲区中何处开始存储。
 				gl.enableVertexAttribArray(vPosition);
-				//我们假设绕着y轴进行旋转，且旋转角度为theta度，则旋转矩阵为
-				let f=gl.getUniformLocation(program,'f');
-				gl.uniform1f(f,fvalue);
-				gl.clear(gl.COLOR_BUFFER_BIT);
-				gl.drawArrays(gl.TRIANGLES,0,points.length);
+				let colorbuffer=gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER,colorbuffer);
+				gl.bufferData(gl.ARRAY_BUFFER,flatten(colors),gl.STATIC_DRAW);
+				let vColor=gl.getAttribLocation(program,'vColor');
+				gl.vertexAttribPointer(vColor,3,gl.FLOAT,false,0,0);
+				gl.enableVertexAttribArray(vColor);//激活
+				let indexbuffer=gl.createBuffer();
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexbuffer);
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint8Array(pointIndex),gl.STATIC_DRAW);//注意这里的new Uint8Array
+				//下面指定眼睛即观察点在什么地方
+				//首先要知道眼睛在什么地方，假设眼睛距离at点的距离为LONG
+				let LONG=document.getElementById('rangeipt01').value;
+				let θ=(document.getElementById('rangeipt02').value)*Math.PI/180;//角度换算，其中θ是绕y轴旋转的角度
+				let φ=(document.getElementById('rangeipt03').value)*Math.PI/180;//角度换算，其中φ是绕y=0平面的角度
+				let eye=[LONG*Math.cos(θ),LONG*Math.sin(φ),LONG*Math.sin(θ)];
+				//at就是原点所以
+				let at=[0.0,0.0,0.0];
+				//up就是y轴的正方向
+				let up=[0.0,1.0,0.0];
+				//知道了eye,at,up就知道了modelMatrix了
+				let model=lookAt(eye,at,up);
+				//找到顶点着色器里面的modelMatrix这个量
+				let modelMatrix=gl.getUniformLocation(program,'modelMatrix');
+				//负值modelMatrix
+				gl.uniformMatrix4fv(modelMatrix,false,flatten(model));//其中第二个参数在webgl中必须指定为false
+				//下面指定投影变换矩阵，投影变换与left right bottom top near far相关
+				let left=Number(document.getElementById('rangeipt04').value);
+				let right=Number(document.getElementById('rangeipt05').value);
+				let bottom=Number(document.getElementById('rangeipt06').value);
+				let top=Number(document.getElementById('rangeipt07').value);
+				let near=Number(document.getElementById('rangeipt08').value);
+				let far=Number(document.getElementById('rangeipt09').value);
+				let project=ortho(left,right,bottom,top,near,far);
+				let proMatrix=gl.getUniformLocation(program,'proMatrix');
+				gl.uniformMatrix4fv(proMatrix,false,flatten(project));
+				//开始画图
+				gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+				gl.drawElements(gl.TRIANGLES,pointIndex.length,gl.UNSIGNED_BYTE,0);
 			}
 
-			let rangeInput=document.getElementById('rangeipt');
+			let rangeInput=document.getElementById('rangeipt01');
 			let num=document.getElementById('num');
 			rangeInput.addEventListener('change',(e)=>{
-				num.innerHTML=`f=${Number(e.target.value).toFixed(1)}`;
-				render(e.target.value);
+				num.innerHTML=`eye距离原点的距离为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput02=document.getElementById('rangeipt02');
+			let num02=document.getElementById('num02');
+			rangeInput02.addEventListener('change',(e)=>{
+				num02.innerHTML=`eye围绕y轴旋转所得到的角度=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput03=document.getElementById('rangeipt03');
+			let num03=document.getElementById('num03');
+			rangeInput03.addEventListener('change',(e)=>{
+				num03.innerHTML=`eye与y=0的平面所成的角度=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput04=document.getElementById('rangeipt04');
+			let num04=document.getElementById('num04');
+			rangeInput04.addEventListener('change',(e)=>{
+				num04.innerHTML=`left的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput05=document.getElementById('rangeipt05');
+			let num05=document.getElementById('num05');
+			rangeInput05.addEventListener('change',(e)=>{
+				num05.innerHTML=`right的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput06=document.getElementById('rangeipt06');
+			let num06=document.getElementById('num06');
+			rangeInput06.addEventListener('change',(e)=>{
+				num06.innerHTML=`bottom的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput07=document.getElementById('rangeipt07');
+			let num07=document.getElementById('num07');
+			rangeInput07.addEventListener('change',(e)=>{
+				num07.innerHTML=`top的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput08=document.getElementById('rangeipt08');
+			let num08=document.getElementById('num08');
+			rangeInput08.addEventListener('change',(e)=>{
+				num08.innerHTML=`near的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
+			});
+			let rangeInput09=document.getElementById('rangeipt09');
+			let num09=document.getElementById('num09');
+			rangeInput09.addEventListener('change',(e)=>{
+				num09.innerHTML=`far的值为=${Number(e.target.value).toFixed(1)}`;
+				render();
 			});
 			window.onload=function(){
 				let canvas=document.getElementById('gl-canvas');
@@ -127,15 +244,8 @@
 				if(!gl){
 					alert("webgl isn't available");
 				}
-				let vertices=[
-					vec2(-1,-1),
-					vec2(0,1),
-					vec2(1,-1)
-				];
-				divideTriangle(vertices[0],vertices[1],vertices[2],5);
 				gl.viewport(0,0,canvas.width,canvas.height);
-				let num=rangeInput.value;
-				render(num);
+				render();
 			}
 	</script>
 	
