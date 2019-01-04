@@ -87,7 +87,6 @@
             gl.uniform4fv(fcolor,flatten([0.0,0.0,0.0,1.0]));//黑色
             gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix));
             gl.drawArrays(gl.TRIANGLE_FAN,0,points.length);//points.length指的是顶点个数，而不是元素的个数，这个要注意一下
-
         }
     </script>
 
