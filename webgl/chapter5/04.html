@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>在y平面上生成阴影</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="webglcanvas"></canvas>
+    <script id='vertex-shader' type='x-shader/x-vertex'>
+        attribute vec4 vposition;
+        uniform mat4 modelMatrix;
+        uniform mat4 projectMatrix;
+        void main(){
+            gl_Position=projectMatrix*modelMatrix*vposition;
+        }
+    </script>
+    <script id='fragment-shader' type='x-shader/x-fragment'>
+        precision mediump float;
+        uniform vec4 fcolor;
+        void main(){
+            gl_FragColor=fcolor;
+        }
+    </script>
+    <script src="../Common/webgl-utils.js"></script>
+    <script src="../Common/initShaders.js"></script>
+    <script src="../Common/MV.js"></script>
+    <script>
+        window.onload=()=>{
+            let canvas=document.getElementById('webglcanvas');
+            let WIDTH=document.body.clientWidth;
+            canvas.width=`${WIDTH}`;
+            canvas.height=`${WIDTH}`;
+            let gl=WebGLUtils.setupWebGL(canvas);
+            if(!gl){
+                alert('您当前的浏览器不支持webgl');
+            }
+            gl.viewport(0,0,canvas.width,canvas.height);
+            gl.clearColor(1.0,1.0,1.0,1.0);
+            gl.enable(gl.DEPTH_TEST);
+            let program=initShaders(gl,'vertex-shader','fragment-shader');
+            gl.useProgram(program);
+            let points=[//1234
+                [-0.5,0.5,0.5],
+                [0.5,0.5,0.5],
+                [0.5,0.5,-0.5],
+                [-0.5,0.5,-0.5]
+            ];
+            let buffer=gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+            gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
+            let vposition=gl.getAttribLocation(program,'vposition');
+            gl.vertexAttribPointer(vposition,3,gl.FLOAT,false,0,0);//传入false或true，表明是否将非浮点类型的数据归一化到[0,1]或[-1,1]之间。
+            gl.enableVertexAttribArray(vposition);
+            let modelMatrixLoc=gl.getUniformLocation(program,'modelMatrix');
+            let projectMatrixLoc=gl.getUniformLocation(program,'projectMatrix');
+            let eye=[1.0,0.5,1.0];
+            let up=[0.0,1.0,0.0];
+            let at=[0.0,0.0,0.0];
+            let modelMatrix=lookAt(eye,at,up);//注意顺序
+            gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix));
+            let projectMatrix=ortho(-2,2,-1.5,1.5,-3,3);
+            gl.uniformMatrix4fv(projectMatrixLoc,false,flatten(projectMatrix));
+            let fcolor=gl.getUniformLocation(program,'fcolor');
+            gl.uniform4fv(fcolor,flatten([1.0,0.0,0.0,1.0]));//红色
+            gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_FAN,0,points.length);//points.length指的是顶点个数，而不是元素的个数，这个要注意一下
+            //下面生成阴影
+            //首先要知道光照在哪里
+            let light=[0.0,2.0,0.0];
+            let m=mat4();
+            m[3][1]=-1/light[1];
+            m[3][3]=0.0;
+            modelMatrix=mult(modelMatrix,translate(light[0],light[1],light[2]));
+            modelMatrix=mult(modelMatrix,m);
+            modelMatrix=mult(modelMatrix,translate(-light[0],-light[1],-light[2]));
+            gl.uniform4fv(fcolor,flatten([0.0,0.0,0.0,1.0]));//黑色
+            gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix));
+            gl.drawArrays(gl.TRIANGLE_FAN,0,points.length);//points.length指的是顶点个数，而不是元素的个数，这个要注意一下
+        }
+    </script>
+
+</body>
+
+</html>

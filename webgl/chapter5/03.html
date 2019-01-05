@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>墨西哥帽子</title>
+    <style>
+        *{
+            box-sizing: border-box;
+            padding:0;
+            margin:0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="webglcanvas"></canvas>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 vposition;
+        uniform mat4 modelMatrix;
+        uniform mat4 projectMatrix;
+        void main(){
+            gl_Position=projectMatrix*modelMatrix*vposition;
+        }
+    </script>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        uniform vec4 fcolor;
+        void main(){
+            gl_FragColor=fcolor;
+        }
+    </script>
+    <script src="../Common/webgl-utils.js"></script>
+    <script src="../Common/initShaders.js"></script>
+    <script src="../Common/MV.js"></script>
+
+    <script>
+        window.onload = () => {
+            //首先计算当前屏幕的宽度
+            let WIDTH = document.body.clientWidth;
+            //设置canvas的宽度和高度
+            let canvas = document.getElementById('webglcanvas');
+            //注意不能设置style,如canvas.style.width='375px';!!!
+            canvas.width = WIDTH;
+            canvas.height = WIDTH;
+            let gl = WebGLUtils.setupWebGL(canvas);
+            if (!gl) {
+                alert('当前浏览器不支持webgl');
+            }
+            gl.viewport(0, 0, WIDTH, WIDTH);
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);//设置白色背景
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.enable(gl.POLYGON_OFFSET_FILL);
+            gl.polygonOffset(1.0, 2.0);
+            let program = initShaders(gl, 'vertex-shader', 'fragment-shader');
+            gl.useProgram(program);
+            //f(x,z)=sin(πr)/πr; 其中r=Math.sqrt(x*x+z*z);
+            //假设我们把canvas分成50行50列
+            let nrows = 50, ncolumn = 50;
+            let data = [], tmp = [];
+            let Index = 0;
+            let x, z, r, p, s;
+            for (let i = 0; i < nrows; i++) {
+                for (let j = 0; j < ncolumn; j++) {
+                    Index++;
+                    x = 4 * i / nrows - 2;
+                    z = 4 * j / ncolumn - 2;
+                    r = Math.sqrt(x * x + z * z);
+                    if (r == 0) {
+                        s = 1.0;
+                    } else {
+                        p = Math.PI * r;
+                        s = Math.sin(p) / p;
+                    }
+                    tmp.push(s);
+                    if (Index % 50 == 0 && Index > 0) {//换行
+                        data.push(tmp);
+                        tmp = [];
+                    }
+
+                }
+            }
+            let points = [];
+            //data里面的数据是按照行进行排练的
+            for (let i = 0; i < nrows - 1; i++) {
+                for (let j = 0; j < ncolumn - 1; j++) {
+                    points.push(vec4(2 * i / nrows - 1, data[i][j], 2 * j / ncolumn - 1, 1.0));
+                    points.push(vec4(2 * (i + 1) / nrows - 1, data[i + 1][j], 2 * j / ncolumn - 1, 1.0));
+                    points.push(vec4(2 * (i + 1) / nrows - 1, data[i + 1][j + 1], 2 * (j + 1) / ncolumn - 1, 1.0));
+                    points.push(vec4(2 * i / nrows - 1, data[i][j + 1], 2 * (j + 1) / ncolumn - 1, 1.0));
+                }
+            }
+            let eye = [1, 2, 3];
+            let at = [0, 0, 0];
+            let up = [0, 1, 0];
+            let modelMatrix = lookAt(eye, at, up);
+            let modelMatrixLoc = gl.getUniformLocation(program, 'modelMatrix');
+            gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+            let projectMatrix = ortho(-3, 3, -3, 3, -15, 15);
+            let projectMatrixLoc = gl.getUniformLocation(program, 'projectMatrix');
+            gl.uniformMatrix4fv(projectMatrixLoc, false, flatten(projectMatrix));
+            let red = [1.0, 0.0, 0.0, 1.0], black = [0.0, 0.0, 0.0, 1.0];
+            let vposition = gl.getAttribLocation(program, 'vposition');
+            let buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+            gl.vertexAttribPointer(vposition, 4, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vposition);
+            let fcolor = gl.getUniformLocation(program, 'fcolor');
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            for (let i = 0; i < points.length; i += 4) {
+                gl.uniform4fv(fcolor, flatten(red));
+                gl.drawArrays(gl.TRIANGLE_FAN, i, 4);
+                gl.uniform4fv(fcolor, flatten(black));
+                gl.drawArrays(gl.LINE_LOOP, i, 4);
+            }
+        }
+    </script>
+</body>
+
+</html>
