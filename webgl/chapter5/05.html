@@ -143,15 +143,17 @@
                 pointsArray=[];
                 colorsArray=[];
                 cube(innerboxpoints);//这是第二个正方形
-                gl.bindBuffer(gl.ARRAY_BUFFER,buffer1);
+                let buffer2=gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER,buffer2);
                 gl.bufferData(gl.ARRAY_BUFFER,flatten(pointsArray),gl.STATIC_DRAW);
                 gl.vertexAttribPointer(vposition,3,gl.FLOAT,false,0,0);
                 gl.enableVertexAttribArray(vposition);
-                gl.bindBuffer(gl.ARRAY_BUFFER,colorbuffer);
+                let colorbuffer2=gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER,colorbuffer2);
                 gl.bufferData(gl.ARRAY_BUFFER,flatten(colorsArray),gl.STATIC_DRAW);
                 gl.vertexAttribPointer(vcolor,3,gl.FLOAT,false,0,0);
                 gl.enableVertexAttribArray(vcolor);
-                gl.bindBuffer(gl.ARRAY_BUFFER,null);
+                 gl.bindBuffer(gl.ARRAY_BUFFER,null);
                 //让里面的方块不断的绕着y轴旋转
                 theta++;
                 theta=Math.PI/180*theta;//转为角度
@@ -164,6 +166,17 @@
                 modelMatrix2=mult(modelMatrix2,my);
                 gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix2));
                 gl.drawArrays(gl.TRIANGLES,0,pointsArray.length);
+                //下面定义第1个光源
+                let light01=[0,0,0.25];
+                let m=mat4();
+                m[3][2]=1/0.5;
+                m[3][3]=0.0;
+                modelMatrix2=mult(modelMatrix2,translate(light01[0],light01[1],light01[2]));
+                modelMatrix2=mult(modelMatrix2,m);
+                modelMatrix2=mult(modelMatrix2,translate(-light01[0],-light01[1],-light01[2]));
+                gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix2));
+                gl.drawArrays(gl.TRIANGLES,0,pointsArray.length);
+                //把
                 requestAnimationFrame(render);
             }
             render();
