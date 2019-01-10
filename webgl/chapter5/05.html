@@ -167,15 +167,15 @@
                 gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix2));
                 gl.drawArrays(gl.TRIANGLES,0,pointsArray.length);
                 //下面定义第1个光源
-                let light01=[0,0,0.25];
-                let m=mat4();
-                m[3][2]=1/0.5;
-                m[3][3]=0.0;
-                modelMatrix2=mult(modelMatrix2,translate(light01[0],light01[1],light01[2]));
-                modelMatrix2=mult(modelMatrix2,m);
-                modelMatrix2=mult(modelMatrix2,translate(-light01[0],-light01[1],-light01[2]));
-                gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix2));
-                gl.drawArrays(gl.TRIANGLES,0,pointsArray.length);
+                // let light01=[0,0,0.25];
+                // let m=mat4();
+                // m[3][2]=1/0.5;
+                // m[3][3]=0.0;
+                // modelMatrix2=mult(modelMatrix2,translate(light01[0],light01[1],light01[2]));
+                // modelMatrix2=mult(modelMatrix2,m);
+                // modelMatrix2=mult(modelMatrix2,translate(-light01[0],-light01[1],-light01[2]));
+                // gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix2));
+                // gl.drawArrays(gl.TRIANGLES,0,pointsArray.length);
                 //把
                 requestAnimationFrame(render);
             }
