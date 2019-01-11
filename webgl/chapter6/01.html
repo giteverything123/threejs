@@ -76,7 +76,7 @@
                 divideTriangle(c,b,d,n);
             }
 
-            sphereTriangle(vertexArray[0],vertexArray[1],vertexArray[2],vertexArray[3],2);
+            sphereTriangle(vertexArray[0],vertexArray[1],vertexArray[2],vertexArray[3],4);
 
             let eye=[0,2,1];
             let at=[0,0,0];
@@ -84,7 +84,7 @@
 
             let modelMatrix=lookAt(eye,at,up);
 
-            let projectMatrix=ortho(-2,2,-2,2,-14,14);
+            let projectMatrix=ortho(-4,4,-4,4,-14,14);
             let modelMatrixLoc=gl.getUniformLocation(program,'modelMatrix');
             let projectMatrixLoc=gl.getUniformLocation(program,'projectMatrix');
             gl.uniformMatrix4fv(modelMatrixLoc,false,flatten(modelMatrix));
@@ -95,7 +95,7 @@
             gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
             gl.bufferData(gl.ARRAY_BUFFER,flatten(points),gl.STATIC_DRAW);
             let vposition=gl.getAttribLocation(program,'vposition');
-            gl.vertexAttribPointer(vposition,3,gl.FLOAT,false,0,0);
+            gl.vertexAttribPointer(vposition,4,gl.FLOAT,false,0,0);
             //上面一个函数参数的意思是
             //1.指定待分配attribute变量的存储位置
             //2.指定缓冲区中每个顶点的分量个数。
@@ -104,7 +104,12 @@
             //5.指定相邻两个顶点间的字节数，默认为0
             //6.指定缓冲区对象中的偏移量，即attribute变量从缓冲区中何处开始存储。
             gl.enableVertexAttribArray(vposition);//激活
-            gl.drawArrays(gl.TRIANGLES,0,points.length);
+            gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+            let len=points.length;
+            for(let i=0;i<len;i+=3){
+            	 gl.drawArrays(gl.LINE_STRIP,i,3);
+            	 //从第i个点开始画,每次占3个点
+            }
 
            
         }
