@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ex01</title>
+    <title>ex03-雾2</title>
     <script src="../libs/three.js"></script>
     <script src="../libs/jquery-1.9.0.js"></script>
     <script src="../libs/stats.js"></script>
@@ -41,8 +41,6 @@
             renderer.setClearColor(0xEEEEEE);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMapEnabled = true;
-            var axes = new THREE.AxisHelper(20); // 20是轴线的尺寸
-            scene.add(axes);
             // 宽60 长20 
             var planeGeometry = new THREE.PlaneBufferGeometry(60, 40);
             var planeMaterial = new THREE.MeshLambertMaterial({
@@ -77,16 +75,17 @@
                         e.rotation.z += controls.rotationSpeed;
                     }
                 })
+                scene.fog = new THREE.FogExp2(0xffffff, controls.fogWeight)
                 requestAnimationFrame(render);
                 renderer.render(scene, camera);
             }
             $('#WebGL-output').append(renderer.domElement);
-            render();
 
             var controls = {
                 rotationSpeed: 0.02,
                 bouncingSpeed: 0.03,
                 numberOfObjects: 0,
+                fogWeight: 0.015,
                 addCube() {
                     var cubeSize = Math.ceil(Math.random() * 3);
                     var cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
@@ -117,6 +116,9 @@
             gui.add(controls, 'addCube');
             gui.add(controls, 'removeCube');
             gui.add(controls, 'numberOfObjects').listen();
+            gui.add(controls, 'fogWeight', 0, 0.02);
+            render();
+
         });
     </script>
 </body>
