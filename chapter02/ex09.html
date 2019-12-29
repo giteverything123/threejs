@@ -1,0 +1,126 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ex09-改变相机观察点</title>
+  <script src="../libs/three.js"></script>
+  <script src="../libs/stats.js"></script>
+  <script src="../libs/dat.gui.js"></script>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="Stats-output"></div>
+  <div id="WebGL-output"></div>
+  <script>
+    function init() {
+      var stats = initStats();
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000)
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setClearColor(new THREE.Color(0xeeeeee, 1.0));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      var planeGeometry = new THREE.PlaneBufferGeometry(180, 180);
+      var planeMaterial = new THREE.MeshLambertMaterial({
+        color: 0xffffff
+      });
+      var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+      plane.receiveShadow = true;
+      plane.rotation.x = -0.5 * Math.PI;
+      plane.position.x = 0;
+      plane.position.y = 0;
+      plane.position.z = 0;
+      scene.add(plane);
+      camera.position.x = 120;
+      camera.position.y = 60;
+      camera.position.z = 180;
+      var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+      for(var j = 0; j < planeGeometry.parameters.height / 5; j++) {
+          for(var i = 0; i < planeGeometry.parameters.width / 5; i++) {
+              var rnd = Math.random() * 0.75 + 0.25;
+              var cubeMaterial = new THREE.MeshLambertMaterial();
+              cubeMaterial.color = new THREE.Color(0x00ee22);
+              var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+              cube.position.z = -((planeGeometry.parameters.height) / 2) + 2 + (j * 5);
+              cube.position.x = -((planeGeometry.parameters.width) / 2) + 2 + (i * 5);
+              cube.position.y = 2;
+              scene.add(cube);
+          }
+      }
+      var lookAtGeometry = new THREE.SphereGeometry(2);
+      var lookAtMesh = new THREE.Mesh(lookAtGeometry, new THREE.MeshLambertMaterial({
+        color: 0xff0000
+      }));
+      scene.add(lookAtMesh);
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+      directionalLight.position.set(-20, 40, 60);
+      scene.add(directionalLight);
+      var ambientLight = new THREE.AmbientLight(0x292929);
+      scene.add(ambientLight);
+      document.getElementById('WebGL-output').appendChild(renderer.domElement);
+      var controls = {
+        perspective: 'Perspective',
+        switchCamera() {
+            if (camera instanceof THREE.PerspectiveCamera) {
+                camera = new THREE.OrthographicCamera(window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -200, 500);
+                this.perspective = 'Orthographic';
+            } else {
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.perspective = 'Perspective';
+            }
+            camera.position.set(120, 60, 180);
+            camera.lookAt(scene.position);
+        }
+      }
+      
+      
+      var gui = new dat.GUI();
+      gui.add(controls, 'switchCamera');
+      gui.add(controls, 'perspective').listen();
+      camera.lookAt(scene.position);
+
+      var step = 0;
+      render();
+
+      function render() {
+        stats.update();
+        if (step > 1000) {
+            step = 0;
+        } else {
+            step += 0.02;
+        }
+        if (camera instanceof THREE.Camera) {
+            var x = 10 + (100 * (Math.sin(step)));
+            camera.lookAt(new THREE.Vector3(x, 10, 0));
+            lookAtMesh.position.set(x, 10, 0);
+        }
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+      }
+
+      function initStats() {
+        var stats = new Stats();
+        stats.setMode(0);
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+        document.getElementById('Stats-output').appendChild(stats.domElement);
+        return stats;
+      }
+
+    }
+
+    window.onload = init;
+  </script>
+</body>
+
+</html>
