@@ -41,6 +41,8 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMapEnabled = true;
         renderer.shadowMapType = THREE.PCFShadowMap;
+        let axis = new THREE.AxisHelper(20);
+        scene.add(axis);
         let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         let planeGeometry = new THREE.PlaneBufferGeometry(60, 40, 1, 1);
         let planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff})
@@ -53,7 +55,6 @@
         scene.add(plane);
         var spotLight0 = new THREE.SpotLight(0xcccccc);
         spotLight0.position.set(-40, 30, -10);
-        //spotLight0.lookAt(plane);
         scene.add(spotLight0);
         let cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
         let cubeMaterial = new THREE.MeshLambertMaterial({color: 0xff3333})
@@ -67,14 +68,16 @@
         sphere.position.set(5, 2, 0)
         sphere.castShadow = true;
         scene.add(sphere);
-        let spotLight = new THREE.SpotLight(0xffffff);
-        spotLight.position.set(-2, 40, 10);
-        spotLight.castShadow = true;
-        spotLight.shadowCameraNear = 2;
-        spotLight.shadowCameraFar = 200;
-        spotLight.shadowCameraFov = 30;
-        spotLight.shadowDarknewss = 0.1;
-        scene.add(spotLight);
+        let directionalLight = new THREE.DirectionalLight(0xffffff);
+        directionalLight.position.set(0, 20, 0);
+        directionalLight.castShadow = true;
+        directionalLight.shadowCameraNear = 2;
+        directionalLight.shadowCameraFar = 200;
+        directionalLight.shadowCameraLeft = -10;
+        directionalLight.shadowCameraRight = 10;
+        directionalLight.shadowCameraTop = -20;
+        directionalLight.shadowCameraBottom = 20;
+        scene.add(directionalLight);
         let ambientLight = new THREE.AmbientLight('#1c1c1c');
         scene.add(ambientLight);
         let smallSphereGeometry = new THREE.SphereGeometry(0.2, 10, 10);
@@ -91,9 +94,8 @@
 
         var gui = new dat.GUI();
         var controls = {
-          spotLightColor: '#ffffff',
+          directionalLightColor: '#ffffff',
           castShadow: true,
-          angle: 0.5,
           exponent: 0,
           shadowCameraVisible: false,
           shadowDarkness: 0.5,
@@ -105,55 +107,64 @@
           ambient: '#1c1c1c',
           shadowCameraNear: 0,
           shadowCameraFar: 60,
-          shadowCameraFov: 30
+          shadowCameraLeft: -10,
+          shadowCameraRight: 10,
+          shadowCameraTop: -20,
+          shadowCameraBottom: 20
         }
 
-        gui.addColor(controls, 'spotLightColor').onChange((e) => {
-          spotLight.color = e;
+        gui.addColor(controls, 'directionalLightColor').onChange((e) => {
+          directionalLight.color = new THREE.Color(e);
         });
         gui.addColor(controls, 'ambient').onChange(e=>{
           ambientLight.color = new THREE.Color(e)
         })
         gui.add(controls, 'castShadow').onChange(e => {
-          spotLight.castShadow = e;
+          directionalLight.castShadow = e;
         });
         gui.add(controls, 'shadowCameraNear', 0,100).onChange(e => {
-          spotLight.shadowCameraNear = e;
+          directionalLight.shadowCameraNear = e;
         })
         gui.add(controls, 'shadowCameraFar', 0,1000).onChange(e => {
-          spotLight.shadowCameraFar = e;
-        })
-        gui.add(controls, 'shadowCameraFov', 10, 60).onChange(e => {
-          spotLight.shadowCameraFov = e;
+          directionalLight.shadowCameraFar = e;
         })
 
-        gui.add(controls, 'angle', 0, 2 * Math.PI).onChange(e => {
-          spotLight.angle = e;
-        });
-
+        gui.add(controls, 'shadowCameraLeft', -20, 0).onChange(e => {
+          directionalLight.shadowCameraLeft = e;
+        })
+        gui.add(controls, 'shadowCameraRight', 0, 20).onChange(e => {
+          directionalLight.shadowCameraRight = e;
+        })
+        gui.add(controls, 'shadowCameraTop', -20, 0).onChange(e => {
+          directionalLight.shadowCameraTop = e;
+        })
+        gui.add(controls, 'shadowCameraBottom', -20, 0).onChange(e => {
+          directionalLight.shadowCameraBottom = e;
+        })
+        
         gui.add(controls, 'exponent', 0, 100).onChange(e => {
-          spotLight.exponent = e;
+          directionalLight.exponent = e;
         });
 
         gui.add(controls, 'shadowCameraVisible').onChange(e => {
-          spotLight.shadowCameraVisible = e;
+          directionalLight.shadowCameraVisible = e;
         });
 
         gui.add(controls, 'shadowDarkness',0, 1).onChange(e => {
-          spotLight.shadowDarkness = e;
+          directionalLight.shadowDarkness = e;
         })
 
         gui.add(controls, 'distance', 0, 200).onChange(e => {
-          spotLight.distance = e;
+          directionalLight.distance = e;
         })
 
         gui.add(controls, 'target', ['Plane', 'Cube', 'Sphere']).onChange(e => {
           switch(e){
-            case 'Plane': spotLight.target = plane;
+            case 'Plane': directionalLight.target = plane;
             break;
-            case 'Cube': spotLight.target = cube;
+            case 'Cube': directionalLight.target = cube;
             break;
-            case 'Sphere': spotLight.target = sphere;
+            case 'Sphere': directionalLight.target = sphere;
           }
         })
         var max = 10;
@@ -192,7 +203,7 @@
           smallSphere.position.set(x, 10, z);
           sphere.position.y = Math.sin(b)* 10 + 4;
           cube.rotation.set(c, c, c);
-          spotLight.position.copy(smallSphere.position)
+          //spotLight.position.copy(smallSphere.position)
           stats.update();
           renderer.render(scene, camera);
           requestAnimationFrame(render);
