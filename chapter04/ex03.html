@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>ex03-联合材质</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output">
+</div>
+<div id="WebGL-output">
+</div>
+<script type="text/javascript">
+    function init(){
+      var stats = initStats();
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,10,130);
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setClearColor(new THREE.Color(0x000000,1.0));
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      renderer.shadowMapEnabled = true;
+      camera.position.set(-50,40,50);
+      camera.near = 7;
+      camera.far = 139;
+      camera.lookAt(scene.position);
+      document.getElementById('WebGL-output').appendChild(renderer.domElement);
+
+      var controls = {
+        cameraNear :camera.near,
+        cameraFar: camera.far,
+        rotationSpeed: 0.02,
+        numberOfObjects: scene.children.length,
+        color: 0x00ff00,
+        removeCube(){
+          var allChildren = scene.children;
+          var lastObject = allChildren[allChildren.length-1];
+          if(lastObject instanceof THREE.Object3D){
+            scene.remove(lastObject);
+            this.numberOfObjects = scene.children.length;
+          }
+        },
+        addCube(){
+          var cubeSize = Math.ceil(3 + (Math.random() * 3));
+          var cubeGeometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
+          var cubeMaterial =  new THREE.MeshDepthMaterial();
+          var colorMaterial = new THREE.MeshBasicMaterial({
+            color: this.color,
+            transparent:true,
+            blending:THREE.MultiplyBlending
+          });
+          var cube = new THREE.SceneUtils.createMultiMaterialObject(cubeGeometry,[colorMaterial,cubeMaterial]);
+          cube.children[1].scale.set(0.5,0.5,0.5);
+          cube.castShadow = true;
+          cube.position.x= -60 + Math.round(Math.random() * 100);
+          cube.position.y = Math.round(Math.random() * 10);
+          cube.position.z = -100 + Math.round(Math.random() * 150);
+          scene.add(cube);
+          this.numberOfObjects = scene.children.length;
+        },
+        outputObjects(){
+          console.log(scene.children);
+        }
+      }
+
+      var gui = new dat.GUI();
+      gui.addColor(controls,'color');
+      gui.add(controls,'rotationSpeed',0,0.1);
+      gui.add(controls,'addCube');
+      gui.add(controls,'removeCube');
+      gui.add(controls,'cameraNear',0,50).onChange(e=>{
+        camera.near = e;
+      });
+      gui.add(controls,'cameraFar',50,200).onChange(e=>{
+        camera.far = e;
+      })
+      var i = 0;
+      while(i<10){
+        controls.addCube();
+        i++
+      }
+      render();
+
+      function render(){
+        stats.update();
+        scene.traverse(e=>{
+          if(e instanceof THREE.Mesh){
+            e.rotation.x += controls.rotationSpeed;
+            e.rotation.y += controls.rotationSpeed;
+            e.rotation.z += controls.rotationSpeed;
+          }
+        });
+        renderer.render(scene,camera);
+        requestAnimationFrame(render);
+      }
+    }
+
+    function initStats(){
+      var stats = new Stats();
+      stats.setMode(0);
+      stats.domElement.style.position = 'absolute';
+      stats.domElement.style.left = '0';
+      stats.domElement.style.top = '0';
+      document.getElementById('Stats-output').appendChild(stats.domElement);
+      return stats;
+    }
+    
+    window.onload = init;
+</script>
+</body>
+</html>
