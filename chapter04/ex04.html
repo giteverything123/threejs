@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>ex04-法向量材质</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script src="../libs/CanvasRenderer.js"></script>
+    <script src="../libs/Projector.js"></script>
+    <style>
+        body {
+          margin: 0;
+          overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output">
+</div>
+<div id="WebGL-output">
+</div>
+<script type="text/javascript">
+    function init(){
+      var stats = initStats();
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight,0.1,1000);
+      var renderer;
+      var webGLRenderer = new THREE.WebGLRenderer();
+      webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+      webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+      webGLRenderer.shadowMapEnabled = true;
+      var canvasRenderer = new THREE.CanvasRenderer();
+      canvasRenderer.setSize(window.innerWidth,window.innerHeight);
+      renderer = webGLRenderer;
+      var groundGeom = new THREE.PlaneGeometry(100,100,4,4);
+      var groundMesh = new THREE.Mesh(groundGeom, new THREE.MeshBasicMaterial({
+        color: 0x777777
+      }));
+      groundMesh.rotation.x=-Math.PI/2;
+      groundMesh.position.y=-20;
+      scene.add(groundMesh);
+      var sphereGeometry=new THREE.SphereGeometry(14,20,20);
+      var cubeGeometry=new THREE.BoxGeometry(15,15,15);
+      var planeGeometry=new THREE.PlaneGeometry(14,14,4,4);
+      var meshMaterial = new THREE.MeshNormalMaterial({
+        color:0x7777ff
+      });
+      var sphere = new THREE.Mesh(sphereGeometry,meshMaterial);
+      var cube = new THREE.Mesh(cubeGeometry,meshMaterial);
+      var plane = new THREE.Mesh(planeGeometry,meshMaterial);
+      sphere.position.set(0,3,2);
+      for(let f=0,fl=sphere.geometry.faces.length;f<fl;f++){
+        var face=sphere.geometry.faces[f];
+        var centroid=new THREE.Vector3(0,0,0);
+        centroid.add(sphere.geometry.vertices[face.a]);
+        centroid.add(sphere.geometry.vertices[face.b]);
+        centroid.add(sphere.geometry.vertices[face.c]);
+        centroid.divideScalar(3);
+        
+        var arrow = new THREE.ArrowHelper(face.normal,centroid,2,0x3333ff,0.5,0.5);
+        sphere.add(arrow);
+      }
+      for(let f=0,fl=cube.geometry.faces.length;f<fl;f++){
+        var face=cube.geometry.faces[f];
+        var centroid=new THREE.Vector3(0,0,0);
+        centroid.add(cube.geometry.vertices[face.a]);
+        centroid.add(cube.geometry.vertices[face.b]);
+        centroid.add(cube.geometry.vertices[face.c]);
+        centroid.divideScalar(3);
+        
+        var arrow = new THREE.ArrowHelper(face.normal,centroid,4,0x3333ff,0.5,0.5);
+        cube.add(arrow);
+      }
+      cube.position = sphere.position;
+      scene.add(cube);
+      camera.position.set(-20,30,40);
+      camera.lookAt(new THREE.Vector3(10,0,0));
+      var ambientLight = new THREE.AmbientLight(0x0c0c0c);
+      scene.add(ambientLight);
+      var spotLight = new THREE.SpotLight(0xffffff);
+      spotLight.position.set(-40,60,-10);
+      spotLight.castShadow = true;
+      scene.add(spotLight);
+      document.getElementById('WebGL-output').appendChild(renderer.domElement);
+      var step = 0;
+      var controls = {
+        opacity:meshMaterial.opacity,
+        transparent:meshMaterial.transparent,
+        visible:meshMaterial.visible,
+        side: 'front',
+        wireframe: meshMaterial.wireframe,
+        wireframeLinewidth: meshMaterial.wireframeLinewidth,
+        selectedMesh: 'cube',
+        shadow: 'flat',
+        switchRenderer(){
+          if(renderer instanceof THREE.WebGLRenderer){
+            renderer = canvasRenderer;
+            console.log('使用canvasRenderer');
+          } else {
+            renderer = webGLRenderer;
+            console.log('使用WebGLRenderer');
+          }
+          document.getElementById('WebGL-output').innerHTML = '';
+          document.getElementById('WebGL-output').appendChild(renderer.domElement);
+        }
+      }
+      var gui = new dat.GUI();
+      gui.add(controls,'switchRenderer');
+      var spGui = gui.addFolder('Mesh');
+      spGui.add(controls,'opacity',0,1).onChange(e=>{
+        meshMaterial.opacity = e;
+      });
+      spGui.add(controls,'transparent').onChange(e=>{
+        meshMaterial.transparent = e;
+      });
+      spGui.add(controls,'wireframe').onChange(e=>{
+        meshMaterial.wireframe;
+      })
+      spGui.add(controls,'wireframeLinewidth',0,20).onChange(e=>{
+        meshMaterial.wireframeLinewidth;
+      });
+      spGui.add(controls,'visible').onChange(e=>{
+        meshMaterial.visible = e;
+      })
+      spGui.add(controls,'side',['front','back','double']).onChange(e=>{
+        switch(e){
+          case 'front':
+            meshMaterial.side=THREE.FrontSide;
+            break;
+          case 'back':
+            meshMaterial.side = THREE.BackSide;
+            break;
+          case 'double':
+            meshMaterial.side = THREE.DoubleSide;
+        }
+        meshMaterial.needsUpdate = true;
+      })
+      spGui.add(controls,'shadow',['flat','smooth']).onChange(e=>{
+        switch(e){
+          case 'flat':
+            meshMaterial.shading = THREE.FlatShading;
+            break;
+          case 'smooth':
+            meshMaterial.shading = THREE.SmoothShading;
+            break;
+        }
+        var oldPos = sphere.position.clone();
+        scene.remove(sphere);
+        scene.remove(plane);
+        scene.remove(cube);
+        sphere=new THREE.Mesh(sphere.geometry.clone(),meshMaterial);
+        cube= new THREE.Mesh(cube.geometry.clone(),meshMaterial);
+        plane = new THREE.Mesh(plane.geometry.clone(),meshMaterial);
+        sphere.position = oldPos;
+        switch(controls.selectedMesh){
+          case 'cube':
+            scene.add(cube);
+            break;
+          case 'sphere':
+            scene.add(sphere);
+            break;
+          case 'plane':
+            scene.add(plane)
+        }
+        meshMaterial.needsUpdate=true;
+      });
+
+      spGui.add(controls,'selectedMesh',['cube','sphere','plane']).onChange(e=>{
+        scene.remove(plane);
+        scene.remove(cube);
+        scene.remove(sphere);
+        switch(e){
+          case 'cube':
+            scene.add(cube);
+            break;
+          case 'sphere':
+            scene.add(sphere);
+            break;
+          case 'plane':
+            scene.add(plane);
+        }
+      });
+
+      render();
+
+      function render(){
+        stats.update();
+        cube.rotation.y = step+=0.01;
+        plane.rotation.y = step;
+        sphere.rotation.y = step;
+        renderer.render(scene,camera);
+        requestAnimationFrame(render);
+      }
+
+      function initStats(){
+        var stats = new Stats();
+        stats.setMode(0);
+        stats.domElement.style.position='absolute';
+        stats.domElement.style.left='0';
+        stats.domElement.style.top='0';
+        document.getElementById('Stats-output').appendChild(stats.domElement);
+        return stats;
+      }
+
+      
+
+    }
+    
+    window.onload = init;
+</script>
+</body>
+</html>
