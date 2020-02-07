@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ex04-Basic-3D-Geometry sphere</title>
+    <title>ex05-Basic-3D-Geometry cylinder</title>
     <script src="../libs/three.js"></script>
     <script src="../libs/stats.js"></script>
     <script src="../libs/dat.gui.js"></script>
@@ -27,38 +27,36 @@
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
         var webGLRenderer = new THREE.WebGLRenderer();
-        webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE,1.0));
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
         webGLRenderer.setSize(window.innerWidth,window.innerHeight);
         webGLRenderer.shadowMapEnabled = true;
-        var sphere = createMesh(new THREE.SphereGeometry(4,10,10));
-        scene.add(sphere);
-        camera.position.set(-20,30,40);
+        var cylinder = createMesh(new THREE.CylinderGeometry(20, 20, 20));
+        scene.add(cylinder);
+        camera.position.set(-30,40,50);
         camera.lookAt(new THREE.Vector3(10,0,0));
         document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
         var step = 0;
         var controls = {
-          radius: sphere.children[0].geometry.parameters.radius,
-          widthSegments: sphere.children[0].geometry.parameters.widthSegments,
-          heightSegments: sphere.children[0].geometry.parameters.heightSegments,
-          phiStart:0,
-          phiLength:Math.PI * 2,
-          thetaStart:0,
-          thetaLength:Math.PI,
+          radiusTop:20,
+          radiusBottom:20,
+          height:20,
+          radialSegments:8,
+          heightSegments:8,
+          openEnded:false,
           redraw(){
-            scene.remove(sphere);
-            let {radius,widthSegments,heightSegments,phiStart,phiLength,thetaStart,thetaLength} = controls;            
-            sphere = createMesh(new THREE.SphereGeometry(radius,widthSegments,heightSegments,phiStart,phiLength,thetaStart,thetaLength));
-            scene.add(sphere);
+            scene.remove(cylinder);
+            let {radiusTop,radiusBottom,height,radialSegments,heightSegments,openEnded} = controls;
+            cylinder = createMesh(new THREE.CylinderGeometry(radiusTop,radiusBottom,height,radialSegments,heightSegments,openEnded));
+            scene.add(cylinder);
           }
         }
         var gui = new dat.GUI();
-        gui.add(controls,'radius',0,40).onChange(controls.redraw);
-        gui.add(controls,'widthSegments',0,20).onChange(controls.redraw);
-        gui.add(controls,'heightSegments',0,20).onChange(controls.redraw);
-        gui.add(controls,'phiStart',0,2 * Math.PI).onChange(controls.redraw);
-        gui.add(controls,'phiLength',0,2 * Math.PI).onChange(controls.redraw);
-        gui.add(controls,'thetaStart',0,Math.PI).onChange(controls.redraw);
-        gui.add(controls,'thetaLength',0, Math.PI).onChange(controls.redraw);
+        gui.add(controls,'radiusTop',-40,40).onChange(controls.redraw);
+        gui.add(controls,'radiusBottom',-40,40).onChange(controls.redraw);
+        gui.add(controls,'height',0,40).onChange(controls.redraw);
+        gui.add(controls,'radialSegments',1,20).step(1).onChange(controls.redraw);
+        gui.add(controls,'heightSegments',1,20).step(1).onChange(controls.redraw);
+        gui.add(controls,'openEnded').onChange(controls.redraw);
 
         render();
 
@@ -71,7 +69,7 @@
 
         function render(){
           stats.update();
-          sphere.rotation.y = (step+=0.01);
+          cylinder.rotation.y = step+=0.01;
           webGLRenderer.render(scene,camera);
           requestAnimationFrame(render);
         }
