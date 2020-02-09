@@ -1,0 +1,91 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex06-Basic-3D-Geometry TorusGeometry</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+        webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+        var torus = createMesh(new THREE.TorusGeometry(10, 10, 8, 6, Math.PI * 2));
+        scene.add(torus);
+        camera.position.set(-30,40,50);
+        camera.lookAt(new THREE.Vector3(10,0,0));
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+        var step = 0;
+        var controls = {
+          radius:torus.children[0].geometry.parameters.radius,
+          tube:torus.children[0].geometry.parameters.tube,
+          radialSegments:torus.children[0].geometry.parameters.radialSegments,
+          tubularSegments:torus.children[0].geometry.parameters.tubularSegments,
+          arc:torus.children[0].geometry.parameters.arc,
+          redraw(){
+            scene.remove(torus);
+            let {radius,tube,radialSegments,tubularSegments,arc} = controls;
+            torus = createMesh(new THREE.TorusGeometry(radius,tube,radialSegments,tubularSegments,arc));
+            scene.add(torus);
+          }
+        }
+        var gui = new dat.GUI();
+        gui.add(controls,'radius',0,40).onChange(controls.redraw);
+        gui.add(controls,'tube',0,40).onChange(controls.redraw);
+        gui.add(controls,'radialSegments',0,40).step(1).onChange(controls.redraw);
+        gui.add(controls,'tubularSegments',1,20).step(1).onChange(controls.redraw);
+        gui.add(controls,'arc', 0, Math.PI * 2).onChange(controls.redraw);
+
+        render();
+
+        function createMesh(geom){
+          var meshMaterial = new THREE.MeshNormalMaterial();
+          meshMaterial.side = THREE.DoubleSide;
+          var wireFrameMat = new THREE.MeshBasicMaterial({wireframe:true});
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial,wireFrameMat]);
+        }
+
+        function render(){
+          stats.update();
+          torus.rotation.y = step+=0.01;
+          webGLRenderer.render(scene,camera);
+          requestAnimationFrame(render);
+        }
+
+        function initStats(){
+          var stats = new Stats();
+          stats.setMode(0);
+          stats.domElement.style.position = 'absolute';
+          stats.domElement.style.left = '0px';
+          stats.domElement.style.top = '0px';
+          document.getElementById('Stats-output').appendChild(stats.domElement);
+          return stats;
+        }
+      }
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
