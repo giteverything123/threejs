@@ -1,0 +1,109 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex01-ConvexGeometry</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <script src="../libs//ConvexGeometry.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+        webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+        camera.position.set(-30,40,50);
+        camera.lookAt(new THREE.Vector3(10,0,0));
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        var spGroup, hullMesh;
+        generatePoints();
+
+        var controls={
+          redraw(){
+            scene.remove(spGroup);
+            scene.remove(hullMesh);
+            generatePoints();
+          }
+        }
+
+        var gui = new dat.GUI();
+        gui.add(controls,'redraw');
+
+        render();
+
+        function generatePoints(){
+          var points = [];
+          for(var i=0;i<20;i++){
+            var randX = -15 + Math.round(Math.random() * 30);
+            var randY = -15 + Math.round(Math.random() * 30);
+            var randZ = -15 + Math.round(Math.random() * 30);
+            points.push(new THREE.Vector3(randX,randY,randZ));
+          }
+
+          spGroup = new THREE.Object3D();
+          var material = new THREE.MeshBasicMaterial({color:0xff0000,transparent:false});
+          points.forEach(point => {
+            var spGeom = new THREE.SphereGeometry(0.2);
+            var spMesh = new THREE.Mesh(spGeom,material);
+            spMesh.position.copy(point);
+            spGroup.add(spMesh);
+          });
+          scene.add(spGroup);
+          var hullGeometry = new THREE.ConvexGeometry(points);
+          hullMesh = createMesh(hullGeometry);
+          scene.add(hullMesh);
+        }
+
+        function createMesh(geom){
+          var meshMaterial = new THREE.MeshBasicMaterial({color:0x00ff00,transparent:true,opacity:0.2});
+          meshMaterial.side = THREE.DoubleSide;
+          var wireframMaterial = new THREE.MeshBasicMaterial({wireframe:true});
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial,wireframMaterial]);
+        }
+
+        function render(){
+          stats.update();
+          spGroup.rotation.y = step+=0.01;
+          hullMesh.rotation.y = step;
+          webGLRenderer.render(scene,camera);
+          requestAnimationFrame(render);
+        }
+
+        function initStats() {
+          var stats = new Stats();
+          stats.setMode(0);
+          stats.domElement.style.position = 'absolute';
+          stats.domElement.style.left = '0px';
+          stats.domElement.style.top = '0px';
+          document.getElementById("Stats-output").appendChild(stats.domElement);
+          return stats;
+        }
+      }
+        
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
