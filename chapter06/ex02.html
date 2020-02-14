@@ -1,0 +1,112 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex02-LatheGeometry</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+        webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+        camera.position.set(-30,40,50);
+        camera.lookAt(new THREE.Vector3(10,0,0));
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        var spGroup, latheMesh;
+        generatePoints(12, 2, 2 * Math.PI);
+        var controls = {
+          segments:12,
+          phiStart:0,
+          phiLength:2 * Math.PI,
+          redraw(){
+            scene.remove(latheMesh);
+            scene.remove(spGroup);
+            let {segments,phiStart,phiLength} = controls;
+            generatePoints(segments,phiStart,phiLength);
+          }
+        }
+
+        var gui = new dat.GUI();
+        gui.add(controls,'segments', 0, 50).step(1).onChange(controls.redraw);
+        gui.add(controls,'phiStart', 0, 2 * Math.PI).onChange(controls.redraw);
+        gui.add(controls,'phiLength', 0, 2 * Math.PI).onChange(controls.redraw);
+
+        render();
+
+        function generatePoints(segments,phiStart,phiLength){
+          var points = [],height = 5,count=30;
+          for(var i=0;i<count;i++){
+            points.push(new THREE.Vector3((Math.sin(i * 0.2)+Math.cos(i*0.3))*height+12, 0,(i-count)+count/2));
+          }
+
+          spGroup = new THREE.Object3D();
+          var material = new THREE.MeshBasicMaterial({color:0xff0000,transparent:false});
+          points.forEach(point=>{
+            var spGeom = new THREE.SphereGeometry(0.2);
+            var spMesh = new THREE.Mesh(spGeom, material);
+            spMesh.position.copy(point);
+            spGroup.add(spMesh);
+          });
+
+          scene.add(spGroup);
+          var latheGeometry = new THREE.LatheGeometry(points,segments,phiStart,phiLength);
+          latheMesh = createMesh(latheGeometry);
+          scene.add(latheMesh);
+        }
+
+        function createMesh(geom){
+          var meshMaterial = new THREE.MeshNormalMaterial();
+          meshMaterial.side = THREE.DoubleSide;
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial,new THREE.MeshBasicMaterial({wireframe:true})]);
+        }
+
+        function render(){
+          stats.update();
+          spGroup.rotation.x = step+=0.01;
+          latheMesh.rotation.x = step;
+          webGLRenderer.render(scene,camera);
+          requestAnimationFrame(render);
+        }
+
+        function initStats(){
+          var stats = new Stats();
+          stats.setMode(0);
+          stats.domElement.style.position = 'absolute';
+          stats.domElement.style.left = '0';
+          stats.domElement.style.top = '0';
+          document.getElementById('Stats-output').appendChild(stats.domElement);
+          return stats;
+        }
+
+      }
+        
+        
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
