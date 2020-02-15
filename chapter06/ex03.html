@@ -1,0 +1,139 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex03-Extrude Geometry</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+        webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+        camera.position.set(-20,60,60);
+        camera.lookAt(new THREE.Vector3(20,20,0));
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var shape = createMesh(new THREE.ShapeGeometry(drawShape()));
+        scene.add(shape);
+
+        var step = 0;
+      
+        var controls = {
+          amount: 2,
+          bevelThickness:2,
+          bevelSize:0.5,
+          bevelEnabled:true,
+          bevelSegments:3,
+          curveSegments:12,
+          steps:1,
+          asGeom(){
+            scene.remove(shape);
+            var options = {
+              amount: controls.amount,
+              bevelThickness: controls.bevelThickness,
+              bevelSize: controls.bevelSize,
+              bevelSegments: controls.bevelSegments,
+              bevelEnabled: controls.bevelEnabled,
+              curveSegments: controls.curveSegments,
+              steps: controls.steps
+            }
+            shape = createMesh(new THREE.ExtrudeGeometry(drawShape(),options));
+            scene.add(shape);
+          }
+        }
+
+        var gui = new dat.GUI();
+        gui.add(controls,'amount', 0, 20).onChange(controls.asGeom);
+        gui.add(controls,'bevelThickness', 0, 10).onChange(controls.asGeom);
+        gui.add(controls, 'bevelSize',0, 10).onChange(controls.asGeom);
+        gui.add(controls, 'bevelSegments',0, 30).step(1).onChange(controls.asGeom);
+        gui.add(controls,'bevelEnabled').onChange(controls.asGeom);
+        gui.add(controls,'curveSegments',1,30).step(1).onChange(controls.asGeom);
+        gui.add(controls,'steps',1,5).step(1).onChange(controls.asGeom);
+
+        controls.asGeom();
+        render();
+
+        function drawShape(){
+          var shape = new THREE.Shape();
+          shape.moveTo(10,10);
+          shape.lineTo(10,40);
+          shape.bezierCurveTo(15, 25, 25, 25, 30, 40);
+          shape.splineThru(
+            [new THREE.Vector2(32, 30),
+                new THREE.Vector2(28, 20),
+                new THREE.Vector2(30, 10),
+          ]);
+          shape.quadraticCurveTo(20, 15, 10, 10);
+          var hole1 = new THREE.Path();
+          hole1.absellipse(16, 24, 2, 3, 0, Math.PI * 2, true);
+          shape.holes.push(hole1);
+          var hole2 = new THREE.Path();
+          hole2.absellipse(23, 24, 2, 3, 0, Math.PI * 2, true);
+          shape.holes.push(hole2);
+
+          var hole3 = new THREE.Path();
+          hole3.absarc(20, 16, 2, 0, Math.PI, true);
+          shape.holes.push(hole3);
+
+          return shape;
+        }
+
+        function createMesh(geom){
+          geom.applyMatrix(new THREE.Matrix4().makeTranslation(-20,0,0));
+          var meshMaterial1 = new THREE.MeshNormalMaterial({
+            shading:THREE.FlatShading,
+            transparent:true,
+            opacity:0.7
+          });
+          var meshMaterial2 = new THREE.MeshBasicMaterial({wireframe:true});
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial1,meshMaterial2]);
+        }
+
+        function render() {
+          stats.update();
+          shape.rotation.y = step += 0.01;
+          requestAnimationFrame(render);
+          webGLRenderer.render(scene, camera);
+        }
+
+        function initStats(){
+          var stats = new Stats();
+          stats.setMode(0);
+          stats.domElement.style.position = 'absolute';
+          stats.domElement.style.left = '0';
+          stats.domElement.style.top = '0';
+          document.getElementById('Stats-output').appendChild(stats.domElement);
+          return stats;
+        }
+
+      }
+        
+        
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
