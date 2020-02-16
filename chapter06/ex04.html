@@ -1,0 +1,129 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex04-Extrude tube</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee,1.0));
+        webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+        camera.position.set(-30,40,50);
+        camera.lookAt(new THREE.Vector3(10,0,0));
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        var spGroup, tubeMesh;
+      
+        var controls = {
+          numberOfPoints: 5,
+          segments:64,
+          radius:1,
+          radiusSegments:8,
+          closed:false,
+          points:[],
+          newPoints(){
+            var points = [];
+            for(var i=0;i<controls.numberOfPoints;i++){
+              var randomX = -20 + Math.round(Math.random() * 50);
+              var randomY = -15 + Math.round(Math.random() * 50);
+              var randomZ = -20 + Math.round(Math.random() * 40);
+              points.push(new THREE.Vector3(randomX,randomY,randomZ));
+            }
+            controls.points = points;
+            controls.redraw();
+          },
+          redraw(){
+            scene.remove(spGroup);
+            scene.remove(tubeMesh);
+            let {points,segments,radius,radiusSegments,closed} = controls;
+            generatePoints(points,segments,radius,radiusSegments,closed);
+          }
+        }
+
+        var gui = new dat.GUI();
+        gui.add(controls,'newPoints');
+        gui.add(controls,'numberOfPoints', 2, 15).step(1).onChange(controls.redraw);
+        gui.add(controls, 'segments',0, 200).step(1).onChange(controls.redraw);
+        gui.add(controls, 'radius',0, 10).step(1).onChange(controls.redraw);
+        gui.add(controls,'radiusSegments',0,100).step(1).onChange(controls.redraw);
+        gui.add(controls,'closed').onChange(controls.redraw);
+
+        controls.newPoints();
+
+        render();
+
+        function generatePoints(points,segments,radius,radiusSegments,closed){
+          spGroup = new THREE.Object3D();
+          var material = new THREE.MeshBasicMaterial({color:0xff0000,transparent:false});
+          points.forEach(point=>{
+            var spGeom = new THREE.SphereGeometry(0.2);
+            var spMesh = new THREE.Mesh(spGeom,material);
+            spMesh.position.copy(point);
+            spGroup.add(spMesh);
+          });
+          scene.add(spGroup);
+          var tubeGeometry = new THREE.TubeGeometry(new THREE.SplineCurve3(points),segments,radius,radiusSegments,closed);
+          tubeMesh = createMesh(tubeGeometry);
+          scene.add(tubeMesh);
+        }
+
+        function createMesh(geom){
+          var meshMaterial1 = new THREE.MeshBasicMaterial({
+            color:0x00ff00,
+            transparent:true,
+            opacity:0.2
+          });
+          var meshMaterial2 = new THREE.MeshBasicMaterial({wireframe:true});
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial1,meshMaterial2]);
+        }
+
+        function render() {
+          stats.update();
+          spGroup.rotation.y = step += 0.01;
+          tubeMesh.rotation.y = step;
+          requestAnimationFrame(render);
+          webGLRenderer.render(scene, camera);
+        }
+
+        function initStats(){
+          var stats = new Stats();
+          stats.setMode(0);
+          stats.domElement.style.position = 'absolute';
+          stats.domElement.style.left = '0';
+          stats.domElement.style.top = '0';
+          document.getElementById('Stats-output').appendChild(stats.domElement);
+          return stats;
+        }
+
+      }
+        
+        
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
