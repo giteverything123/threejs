@@ -1,0 +1,119 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex06-Parametric geometries</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE,1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+        camera.position.set(-30,50,50);
+        camera.lookAt(new THREE.Vector3(10,-20,0));
+        var dlight = new THREE.DirectionalLight();
+        dlight.position = new THREE.Vector3(-20,250,-50);
+        dlight.target.position.set(30,-40,-20);
+        dlight.intensity=0.3;
+        scene.add(dlight);
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        
+        var controls = {
+          slices:120,
+          stacks:120,
+          useTris:false,
+          redraw(){
+            scene.remove(mesh);
+            let {slices,stacks,useTris} = controls;
+            mesh = createMesh(new THREE.ParametricGeometry(radialWave,slices,stacks,useTris));
+            scene.add(mesh);
+          } 
+        }
+
+        var gui = new dat.GUI;
+        gui.add(controls,'slices',10,180).step(1).onChange(controls.redraw);
+        gui.add(controls,'stacks',10,180).step(1).onChange(controls.redraw);
+        gui.add(controls,'useTris').onChange(controls.redraw);
+        
+        
+        function radialWave(u, v) {
+            var r = 50;
+
+            var x = Math.sin(u) * r;
+            var z = Math.sin(v / 2) * 2 * r;
+            var y = (Math.sin(u * 4 * Math.PI) + Math.cos(v * 2 * Math.PI)) * 2.8;
+
+            return new THREE.Vector3(x, y, z);
+        };
+
+        var mesh = createMesh(new THREE.ParametricGeometry(radialWave,120,120,false));
+        scene.add(mesh);
+        render();
+
+        function createMesh(geom) {
+          geom.applyMatrix(new THREE.Matrix4().makeTranslation(-25,0,-25));
+          var meshMaterial = new THREE.MeshPhongMaterial({
+            specular: 0xaaafff,
+            color:0x3399ff,
+            shininess:40,
+            metal:true
+          });
+          meshMaterial.side = THREE.DoubleSide;
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial])
+        }
+
+        function render() {
+            stats.update();
+            mesh.rotation.y = step += 0.01;
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+        function initStats() {
+
+            var stats = new Stats();
+            stats.setMode(0);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
+
+
+
+
+      }
+        
+        
+        
+
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
