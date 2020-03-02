@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>ex03 - Particle basic material</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+          margin: 0;
+          overflow: hidden;
+          background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output"></div>
+<div id="WebGL-output"></div>
+
+<script>
+
+  function init() {
+    var stats = initStats();
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+    var webGLRenderer = new THREE.WebGLRenderer();
+    webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+    webGLRenderer.setClearColor(new THREE.Color(0x000000,1.0));
+    camera.position.set(20,0,150);
+    document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+    var cloud;
+
+    var controls = {
+      size:4,
+      transparent: true,
+      opacity: 0.6,
+      vertexColors:true,
+      color:0xffffff,
+      sizeAttenuation:true,
+      rotateSystem:true,
+      redraw() {
+        if(scene.getObjectByName('particles')){
+          scene.remove(scene.getObjectByName('particles'));
+        }
+        let {size,transparent,opacity,vertexColors,sizeAttenuation,color} = controls;
+        createParticles(size,transparent,opacity,vertexColors,sizeAttenuation,color)
+      }
+    }
+    var gui = new dat.GUI();
+    gui.add(controls,'size',0,10).onChange(controls.redraw);
+    gui.add(controls,'transparent').onChange(controls.redraw);
+    gui.add(controls,'opacity',0,1).onChange(controls.redraw);
+    gui.add(controls,'vertexColors').onChange(controls.redraw);
+    gui.add(controls,'sizeAttenuation').onChange(controls.redraw);
+    gui.add(controls,'rotateSystem');
+    
+    controls.redraw()
+
+    function createRandom(range) {
+      return Math.random() * range - range / 2;
+    }
+
+    function createParticles(size,transparent,opacity,vertexColors,sizeAttenuation,color) {
+      var geom = new THREE.Geometry();
+      var material = new THREE.PointCloudMaterial({
+        size,
+        transparent,
+        opacity,
+        vertexColors,
+        sizeAttenuation,
+        color
+      });
+      var range = 500;
+      
+      for(var i=0;i<15000;i++){
+        var particle = new THREE.Vector3(createRandom(range), createRandom(range), createRandom(range));
+        geom.vertices.push(particle);
+        var color = new THREE.Color(0x00ff00);
+        color.setHSL(color.getHSL().h, color.getHSL().s, Math.random() * color.getHSL().l);
+        geom.colors.push(color);
+      }
+      
+      cloud = new THREE.PointCloud(geom,material);
+      cloud.name = 'particles';
+      scene.add(cloud);
+    }
+
+    var step = 0;
+
+    function render(){
+      stats.update();
+      if(controls.rotateSystem) {
+        step += 0.01;
+        cloud.rotation.x = step;
+        cloud.rotation.y = step;
+      }
+      requestAnimationFrame(render);
+      webGLRenderer.render(scene, camera);
+    }
+    render();
+
+    function initStats() {
+      var stats = new Stats();
+      stats.setMode(0); // 0: fps, 1: ms
+      stats.domElement.style.position = 'absolute';
+      stats.domElement.style.left = '0px';
+      stats.domElement.style.top = '0px';
+      document.getElementById("Stats-output").appendChild(stats.domElement);
+      return stats;
+    }
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>

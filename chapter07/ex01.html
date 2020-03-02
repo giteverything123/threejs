@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>ex01 - Particles</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+          margin: 0;
+          overflow: hidden;
+          background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output"></div>
+<div id="WebGL-output"></div>
+
+<script>
+
+  function init() {
+    var stats = initStats();
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000,1.0));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.position.set(0,0,150);
+    document.getElementById('WebGL-output').appendChild(renderer.domElement);
+    createSprites();
+    render();
+
+    function createSprites() {
+      var material = new THREE.SpriteMaterial();
+      for(var x=-5;x<5;x++){
+        for(var y=-5;y<5;y++){
+          var sprite = new THREE.Sprite(material);
+          sprite.position.set(x*10,y*10,0);
+          scene.add(sprite);
+        }
+      }
+    }
+
+    function render() {
+      stats.update();
+      renderer.render(scene,camera);
+      requestAnimationFrame(render);
+    }
+
+    function initStats() {
+      var stats = new Stats();
+
+      stats.setMode(0); // 0: fps, 1: ms
+      stats.domElement.style.position = 'absolute';
+      stats.domElement.style.left = '0px';
+      stats.domElement.style.top = '0px';
+      document.getElementById("Stats-output").appendChild(stats.domElement);
+
+      return stats;
+    }
+  }
+  window.onload = init;
+</script>
+</body>
+</html>

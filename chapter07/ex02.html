@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>ex02 - Particles</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+          margin: 0;
+          overflow: hidden;
+          background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output"></div>
+<div id="WebGL-output"></div>
+
+<script>
+
+  function init() {
+    var stats = initStats();
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+    var webGLRenderer = new THREE.WebGLRenderer();
+    webGLRenderer.setSize(window.innerWidth,window.innerHeight);
+    webGLRenderer.setClearColor(new THREE.Color(0x000000,1.0));
+    camera.position.set(0,0,150);
+    document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+    createParticles();
+    render();
+
+    function createParticles() {
+      var geom = new THREE.Geometry();
+      var material = new THREE.PointCloudMaterial({
+        size: 4, vertexColors:true, color: 0xffffff
+      });
+      for(var x=-5;x<5;x++){
+        for(var y=-5;y<5;y++){
+          var particle = new THREE.Vector3(x*10,y*10,0);
+          geom.vertices.push(particle);
+          geom.colors.push(new THREE.Color(Math.random() * 0x00ffff));
+        }
+      }
+      var cloud = new THREE.PointCloud(geom,material);
+      scene.add(cloud);
+    }
+
+    function render(){
+      stats.update();
+      requestAnimationFrame(render);
+      webGLRenderer.render(scene, camera);
+    }
+
+    function initStats() {
+      var stats = new Stats();
+
+      stats.setMode(0); // 0: fps, 1: ms
+      stats.domElement.style.position = 'absolute';
+      stats.domElement.style.left = '0px';
+      stats.domElement.style.top = '0px';
+      document.getElementById("Stats-output").appendChild(stats.domElement);
+
+      return stats;
+    }
+  }
+  window.onload = init;
+</script>
+</body>
+</html>

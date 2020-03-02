@@ -1,0 +1,134 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ex07-textGeometry</title>
+    <script src="../libs/three.js"></script>
+    <script src="../libs/stats.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../assets/fonts/helvetiker_regular.typeface.js"></script>
+    <script type="text/javascript" src="../assets/fonts/helvetiker_bold.typeface.js"></script>
+    <script type="text/javascript" src="../assets/fonts/bitstream_vera_sans_mono_roman.typeface.js"></script>
+    <style>
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script>
+      function init() {
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0x000000,1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+        camera.position.set(-600,300,600);
+        camera.lookAt(new THREE.Vector3(400,0,-300));
+        var dlight = new THREE.DirectionalLight();
+        dlight.position = new THREE.Vector3(-20,250,-50);
+        dlight.position.set(25,23,15);
+        scene.add(dlight);
+        var dlight2=new THREE.DirectionalLight();
+        dlight2.position.set(-25,23,15);
+        scene.add(dlight2);
+        document.getElementById('WebGL-output').appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        var text1,text2;
+
+        var controls = {
+          size:90,
+          height:120,
+          bevelThickness:2,
+          bevelSize:0.5,
+          bevelEnabled:true,
+          bevelSegments:3,
+          curveSegments:3,
+          steps:1,
+          font:'helvetiker',
+          weight:'normal',
+          redraw(){
+            scene.remove(text1);
+            scene.remove(text2);
+            let {size,height,weight,font,bevelThickness,bevelSize,bevelSegments,bevelEnabled,curveSegments,steps} = controls;
+            let {slices,stacks,useTris} = controls;
+            let options = {
+              size,
+              height,
+              weight,
+              font,
+              bevelThickness,
+              bevelSize,
+              bevelSegments,
+              bevelEnabled,
+              curveSegments,
+              steps
+            }
+            text1 = createMesh(new THREE.TextGeometry("hello ",options));
+            text1.position.z=-100;
+            text1.position.y=100;
+            scene.add(text1);
+            text2 = createMesh(new THREE.TextGeometry("world ",options));
+            scene.add(text2);
+          } 
+        }
+
+        controls.redraw();
+        var gui = new dat.GUI;
+        gui.add(controls,'size',0,200).onChange(controls.redraw);
+        gui.add(controls,'height',0,200).onChange(controls.redraw);
+        gui.add(controls,'font',['bitstream vera sans mono', 'helvetiker']).onChange(controls.redraw);
+        gui.add(controls, 'bevelThickness', 0, 10).onChange(controls.redraw);
+        gui.add(controls, 'bevelSize', 0, 10).onChange(controls.redraw);
+        gui.add(controls, 'bevelSegments', 0, 30).step(1).onChange(controls.redraw);
+        gui.add(controls, 'bevelEnabled').onChange(controls.redraw);
+        gui.add(controls, 'curveSegments', 1, 30).step(1).onChange(controls.redraw);
+        gui.add(controls, 'steps', 1, 5).step(1).onChange(controls.redraw);
+        
+        render();
+
+        function createMesh(geom) {
+          var meshMaterial = new THREE.MeshPhongMaterial({
+            specular: 0xffffff,
+            color:0xeeffff,
+            shininess:100,
+            metal:true
+          });
+          return THREE.SceneUtils.createMultiMaterialObject(geom,[meshMaterial])
+        }
+
+        function render() {
+            stats.update();
+            text1.rotation.y = step += 0.01;
+            text2.rotation.y = step;
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+        function initStats() {
+            var stats = new Stats();
+            stats.setMode(0);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+            return stats;
+        }
+      }
+      
+      window.onload = init; 
+    </script>
+</body>
+
+</html>
